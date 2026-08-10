@@ -1,0 +1,4 @@
+# A primeira linha aparece ao membro na faixa de "Nova versao disponivel".
+# Escreva aqui o que mudou, antes de correr o PUBLICAR.bat.
+
+Contas separadas, aba NAV, metas mensais e Checklist

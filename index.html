@@ -1,0 +1,1683 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, must-revalidate">
+<title>CTM · Fund Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<style>
+:root{--bg:#060a0d;--bg2:#0b1118;--bg3:#0f1720;--card:#111c27;--card2:#162130;--border:#1a2d3d;--border2:#1f3347;--green:#3dffb0;--blue:#00c8ff;--red:#ff4d4d;--yellow:#ffd166;--orange:#ff9f43;--purple:#a78bfa;--text:#e2eaf2;--text2:#7a9ab5;--text3:#3d5a70;--font:'Syne',sans-serif;--mono:'JetBrains Mono',monospace;--r:10px;--rsm:6px;}
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--font);overflow:hidden;}
+body{display:flex;flex-direction:column;}
+/* TOPBAR */
+#topbar{display:flex;align-items:center;gap:10px;padding:0 18px;height:56px;min-height:56px;background:var(--bg2);border-bottom:1px solid var(--border);z-index:100;}
+#logo-area{display:flex;align-items:center;gap:9px;position:relative;}
+#logo-img{width:36px;height:36px;border-radius:8px;object-fit:cover;display:none;flex-shrink:0;}
+#logo-init{width:36px;height:36px;border-radius:8px;background:linear-gradient(135deg,var(--green),var(--blue));display:flex;align-items:center;justify-content:center;font-weight:800;font-size:11px;color:#000;flex-shrink:0;cursor:pointer;}
+#logo-hint{position:absolute;left:0;top:0;width:36px;height:36px;border-radius:8px;background:rgba(0,0,0,.75);display:none;align-items:center;justify-content:center;font-size:8px;color:#fff;pointer-events:none;}
+#logo-area:hover #logo-hint{display:flex;}
+#fund-nm{font-weight:700;font-size:13px;cursor:pointer;}
+#fund-sb{font-family:var(--mono);font-size:8px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;cursor:pointer;}
+.apill{display:flex;align-items:center;gap:5px;padding:4px 10px;border:1px solid var(--border2);border-radius:20px;font-family:var(--mono);font-size:10px;background:var(--card);}
+.apill .dot{width:6px;height:6px;border-radius:50%;}
+.apill.selp{cursor:pointer;transition:all .18s;color:var(--text3);}
+.apill.selp:hover{border-color:var(--blue);color:var(--text2);}
+.apill.selp.on{border-color:var(--green);color:var(--text);background:var(--card2);box-shadow:0 0 0 1px rgba(61,255,176,.25);}
+.mrow{display:grid;grid-template-columns:150px 1fr 62px 120px;gap:10px;align-items:center;padding:9px 14px;border-bottom:1px solid var(--border);}
+.mrow input[type=range]{width:100%;accent-color:var(--green);}
+.mtag{font-family:var(--mono);font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;}
+.rrow{display:flex;align-items:center;gap:9px;padding:7px 14px;border-bottom:1px solid var(--border);}
+.rrow input.ri{flex:1;background:transparent;border:none;color:var(--text);font-family:var(--mono);font-size:10px;padding:3px 0;border-bottom:1px solid transparent;}
+.rrow input.ri:focus{outline:none;border-bottom-color:var(--blue);}
+.rrow .rdel{background:none;border:none;color:var(--text3);cursor:pointer;font-size:12px;padding:0 3px;}
+.rrow .rdel:hover{color:var(--red);}
+.ckhead{display:flex;align-items:center;justify-content:space-between;padding:7px 14px;background:var(--bg3);border-bottom:1px solid var(--border);}
+.ckcnt{font-family:var(--mono);font-size:9px;letter-spacing:1px;}
+.ckcnt.ok{color:var(--green);}.ckcnt.no{color:var(--yellow);}
+.dayflag{display:inline-flex;align-items:center;gap:4px;font-family:var(--mono);font-size:8px;padding:2px 7px;border-radius:10px;}
+.dayflag.ok{background:rgba(61,255,176,.12);color:var(--green);}
+.dayflag.no{background:rgba(255,209,102,.12);color:var(--yellow);}
+.tbsep{flex:1;}
+#utc-clk{font-family:var(--mono);font-size:11px;color:var(--text3);white-space:nowrap;}
+.tbb{display:flex;align-items:center;gap:5px;padding:6px 12px;border-radius:var(--rsm);border:1px solid var(--border2);background:var(--card);color:var(--text2);font-family:var(--mono);font-size:10px;cursor:pointer;transition:all .2s;white-space:nowrap;}
+.tbb:hover{border-color:var(--blue);color:var(--blue);}
+.tbb.acc{background:var(--green);color:#000;border-color:var(--green);font-weight:700;}
+.tbb.acc:hover{background:#5affc0;}
+/* TABS */
+#tabs-bar{display:flex;padding:0 18px;background:var(--bg2);border-bottom:1px solid var(--border);overflow-x:auto;min-height:40px;align-items:flex-end;}
+#tabs-bar::-webkit-scrollbar{height:2px;}
+.tab-btn{padding:8px 13px;border:none;background:transparent;color:var(--text3);font-family:var(--font);font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap;transition:all .2s;border-bottom:2px solid transparent;letter-spacing:.8px;text-transform:uppercase;}
+.tab-btn:hover{color:var(--text2);}
+.tab-btn.active{color:var(--green);border-bottom-color:var(--green);}
+/* MAIN */
+#main{flex:1;overflow-y:auto;padding:18px;}
+#main::-webkit-scrollbar{width:4px;}
+#main::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px;}
+.tab-panel{display:none;}
+.tab-panel.active{display:block;}
+/* KPI ROWS */
+.krow{display:grid;gap:0;border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:12px;}
+.kcell{padding:12px 14px;border-right:1px solid var(--border);background:var(--card);}
+.kcell:last-child{border-right:none;}
+.kcell:hover{background:var(--card2);}
+.klbl{font-family:var(--mono);font-size:8px;color:var(--text3);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:5px;}
+.kval{font-family:var(--mono);font-size:18px;font-weight:600;color:var(--text);line-height:1;}
+.kval.sm{font-size:14px;}.kval.g{color:var(--green);}.kval.b{color:var(--blue);}.kval.r{color:var(--red);}.kval.y{color:var(--yellow);}.kval.p{color:var(--purple);}
+.ksub{font-family:var(--mono);font-size:9px;color:var(--text3);margin-top:3px;}
+.ksub.up{color:var(--green);}.ksub.dn{color:var(--red);}
+.kmeta{font-family:var(--mono);font-size:11px;font-weight:700;color:var(--green);}
+/* DAY PILLS */
+.day-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.dpills{display:flex;gap:5px;flex-wrap:wrap;}
+.dpill{padding:4px 11px;border-radius:20px;border:1px solid var(--border2);background:var(--card);color:var(--text2);font-family:var(--mono);font-size:10px;cursor:pointer;transition:all .2s;}
+.dpill:hover{border-color:var(--blue);color:var(--blue);}
+.dpill.active{background:var(--green);color:#000;border-color:var(--green);font-weight:700;}
+.day-lbl{font-family:var(--mono);font-size:10px;color:var(--text3);}
+/* STATUS */
+.stgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px;}
+.stcard{border-radius:var(--rsm);padding:12px 14px;border:1px solid;}
+.stcard.gc{border-color:var(--green);background:rgba(61,255,176,.05);}
+.stcard.bc{border-color:var(--blue);background:rgba(0,200,255,.05);}
+.stcard.oc{border-color:var(--orange);background:rgba(255,159,67,.05);}
+.stlbl{font-family:var(--mono);font-size:8px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:5px;}
+.stlbl.gc{color:var(--green);}.stlbl.bc{color:var(--blue);}.stlbl.oc{color:var(--orange);}
+.sttext{font-family:var(--mono);font-size:10px;color:var(--text2);line-height:1.5;}
+/* PERF SESSION */
+.psrow{display:grid;gap:0;border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:12px;}
+.pscell{padding:9px 11px;border-right:1px solid var(--border);background:var(--card);}
+.pscell:last-child{border-right:none;}
+.pslbl{font-family:var(--mono);font-size:7px;color:var(--text3);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:3px;}
+.psval{font-family:var(--mono);font-size:14px;font-weight:600;color:var(--text);}
+.psval.g{color:var(--green);}.psval.r{color:var(--red);}
+.pssub{font-family:var(--mono);font-size:8px;color:var(--text3);margin-top:2px;}
+/* ACCOUNT BLOCKS */
+.ablocks{display:grid;gap:10px;margin-bottom:12px;}
+.ab2{grid-template-columns:1fr 1fr;}.ab3{grid-template-columns:1fr 1fr 1fr;}
+.ablock{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;}
+.abhead{display:flex;align-items:center;justify-content:space-between;padding:9px 13px;border-bottom:1px solid var(--border);background:var(--card2);}
+.abtitle{font-family:var(--mono);font-size:9px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:1px;}
+.abgrid{display:grid;}
+.ab4c{grid-template-columns:repeat(4,1fr);}.ab3c{grid-template-columns:repeat(3,1fr);}
+.abcell{padding:9px 12px;border-right:1px solid var(--border);}
+.abcell:last-child{border-right:none;}
+.ablbl{font-family:var(--mono);font-size:7px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:2px;}
+.abval{font-family:var(--mono);font-size:12px;font-weight:600;color:var(--text);}
+.abval.g{color:var(--green);}.abval.r{color:var(--red);}.abval.b{color:var(--blue);}.abval.y{color:var(--yellow);}
+/* GOV INLINE */
+.govinline{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;}
+.govblock{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;}
+.govhead{padding:8px 13px;border-bottom:1px solid var(--border);background:var(--card2);}
+.govtitle{font-family:var(--mono);font-size:8px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1.5px;}
+.govbody{padding:10px 13px;}
+.govrow{display:flex;align-items:center;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border);}
+.govrow:last-child{border-bottom:none;}
+.govrlbl{font-family:var(--mono);font-size:10px;color:var(--text2);}
+.govrval{font-family:var(--mono);font-size:10px;font-weight:600;}
+.govrval.ok{color:var(--green);}.govrval.nd{color:var(--text3);}
+/* POS TABLE */
+.possec{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:12px;}
+.poshead{display:flex;align-items:center;justify-content:space-between;padding:9px 13px;border-bottom:1px solid var(--border);background:var(--card2);}
+.pflts{display:flex;gap:5px;}
+.pflt{padding:3px 9px;border-radius:3px;border:1px solid var(--border2);background:transparent;color:var(--text3);font-family:var(--mono);font-size:9px;cursor:pointer;transition:all .2s;}
+.pflt.active,.pflt:hover{background:var(--green);color:#000;border-color:var(--green);}
+/* CAPITAL FLOW */
+.cflow{display:grid;gap:0;border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:12px;}
+.cfcell{padding:10px 13px;border-right:1px solid var(--border);background:var(--card);}
+.cfcell:last-child{border-right:none;}
+.cflbl{font-family:var(--mono);font-size:8px;color:var(--text3);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:3px;}
+.cfval{font-family:var(--mono);font-size:13px;font-weight:600;}
+.cfval.g{color:var(--green);}.cfval.b{color:var(--blue);}.cfval.y{color:var(--yellow);}
+/* TABLES */
+.twrap{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;}
+th{font-family:var(--mono);font-size:8px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:1px;padding:7px 11px;border-bottom:1px solid var(--border);text-align:left;white-space:nowrap;background:var(--card2);}
+td{font-family:var(--mono);font-size:11px;color:var(--text2);padding:8px 11px;border-bottom:1px solid var(--border);}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:rgba(255,255,255,.015);}
+td.g{color:var(--green);font-weight:600;}td.r{color:var(--red);font-weight:600;}td.b{color:var(--blue);}td.y{color:var(--yellow);}td.bd{font-weight:600;color:var(--text);}td.dm{color:var(--text3);}
+/* CARD */
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:14px;margin-bottom:12px;}
+.card-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.card-t{font-family:var(--mono);font-size:8px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:1.5px;}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;}
+/* FORMS */
+.fg{display:flex;flex-direction:column;gap:4px;}
+.fl{font-family:var(--mono);font-size:8px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;}
+.fi,.fs,.fta{background:var(--bg3);border:1px solid var(--border);border-radius:var(--rsm);color:var(--text);font-family:var(--mono);font-size:11px;padding:7px 11px;width:100%;transition:border-color .2s;}
+.fi:focus,.fs:focus,.fta:focus{outline:none;border-color:var(--blue);}
+.fs option{background:var(--bg3);}.fta{resize:vertical;min-height:60px;}
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:var(--rsm);font-family:var(--font);font-size:11px;font-weight:700;cursor:pointer;transition:all .2s;border:none;white-space:nowrap;}
+.btn-p{background:var(--green);color:#000;}.btn-p:hover{background:#5affc0;}
+.btn-s{background:var(--card2);color:var(--text2);border:1px solid var(--border2);}.btn-s:hover{border-color:var(--blue);color:var(--blue);}
+.btn-d{background:rgba(255,77,77,.1);color:var(--red);border:1px solid rgba(255,77,77,.2);}.btn-d:hover{background:rgba(255,77,77,.2);}
+.btn-sm{padding:4px 9px;font-size:9px;}.btn-lg{padding:11px 26px;font-size:13px;}
+/* LOG SECTIONS */
+.lsec{background:var(--card);border:1px solid var(--border);border-radius:var(--r);margin-bottom:10px;overflow:hidden;}
+.lshead{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--card2);border-bottom:1px solid var(--border);}
+.lstitle{font-family:var(--mono);font-size:9px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:1px;}
+.lsbody{padding:14px;}
+/* INLINE POS TABLE */
+.ptbl input,.ptbl select{background:transparent;border:none;color:var(--text2);font-family:var(--mono);font-size:10px;width:100%;padding:1px 3px;border-bottom:1px solid transparent;transition:border-color .2s;}
+.ptbl input:focus,.ptbl select:focus{outline:none;border-bottom-color:var(--blue);color:var(--text);}
+.ptbl th{font-size:7px;}.ptbl td{padding:5px 7px;font-size:10px;}
+/* TRADE ROW */
+.trow{background:var(--bg3);border:1px solid var(--border);border-radius:var(--rsm);padding:12px;margin-bottom:8px;}
+.tg4{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-bottom:9px;}
+.tg3{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-bottom:9px;}
+.tfoot2{display:flex;align-items:center;justify-content:space-between;}
+/* STARS */
+.stars{color:var(--yellow);font-size:12px;letter-spacing:1px;}.stars.z{color:var(--red);}
+/* PROGRESS */
+.pw{background:var(--bg3);border-radius:3px;height:5px;overflow:hidden;}
+.pb{height:100%;border-radius:3px;}.pb.g{background:linear-gradient(90deg,var(--green),#00ffcc);}.pb.b{background:var(--blue);}.pb.r{background:var(--red);}.pb.y{background:var(--yellow);}
+/* BADGE */
+.badge{display:inline-flex;align-items:center;padding:2px 6px;border-radius:3px;font-family:var(--mono);font-size:8px;font-weight:700;}
+.bg{background:rgba(61,255,176,.15);color:var(--green);}.br{background:rgba(255,77,77,.15);color:var(--red);}.bb{background:rgba(0,200,255,.15);color:var(--blue);}.by{background:rgba(255,209,102,.15);color:var(--yellow);}
+/* CHECKLIST */
+.chki{display:flex;align-items:center;gap:9px;padding:6px 0;border-bottom:1px solid var(--border);}
+.chki:last-child{border-bottom:none;}
+.chkb{width:16px;height:16px;border-radius:3px;border:1.5px solid var(--border2);cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .2s;}
+.chkb.on{background:var(--green);border-color:var(--green);}
+.chkb.on::after{content:'\2713';font-size:10px;color:#000;font-weight:700;}
+.chkt{font-family:var(--mono);font-size:10px;color:var(--text2);}
+/* MODAL */
+.moverlay{position:fixed;inset:0;background:rgba(6,10,13,.93);display:flex;align-items:center;justify-content:center;z-index:1000;backdrop-filter:blur(10px);}
+.mbox{background:var(--card);border:1px solid var(--border2);border-radius:14px;padding:34px;max-width:480px;width:90%;text-align:center;}
+.mbox h2{font-size:20px;font-weight:800;margin-bottom:8px;}
+.mbox p{color:var(--text2);font-size:12px;line-height:1.6;margin-bottom:20px;font-family:var(--mono);}
+/* TOAST */
+#toast{position:fixed;bottom:18px;right:18px;z-index:2000;background:var(--card2);border:1px solid var(--green);border-radius:var(--rsm);padding:10px 16px;font-family:var(--mono);font-size:10px;color:var(--green);opacity:0;transform:translateY(6px);transition:all .3s;pointer-events:none;max-width:340px;}
+#toast.show{opacity:1;transform:translateY(0);}
+/* FOOTER */
+#footer{display:flex;align-items:center;justify-content:space-between;padding:6px 18px;background:var(--bg2);border-top:1px solid var(--border);font-family:var(--mono);font-size:9px;color:var(--text3);}
+/* ACCOUNT TOGGLE */
+.acc-tog{display:flex;align-items:center;gap:10px;padding:10px 14px;border:1px solid var(--border);border-radius:var(--rsm);margin-bottom:8px;background:var(--bg3);}
+.ts{width:36px;height:20px;border-radius:10px;border:1.5px solid var(--border2);cursor:pointer;position:relative;transition:all .3s;flex-shrink:0;background:var(--bg);}
+.ts.on{background:var(--green);border-color:var(--green);}
+.ts::after{content:'';position:absolute;width:12px;height:12px;border-radius:50%;background:#fff;top:2px;left:2px;transition:all .3s;}
+.ts.on::after{left:18px;}
+.acc-lbl{font-family:var(--mono);font-size:11px;font-weight:700;min-width:65px;}
+.acc-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+/* EVENT ROW */
+.evrow{background:var(--bg3);border:1px solid var(--border);border-radius:var(--rsm);padding:9px 13px;margin-bottom:7px;display:grid;grid-template-columns:1fr 1fr 1fr 2fr auto;gap:9px;align-items:end;}
+/* SETUP LOGO AREA */
+.setup-logo-wrap{display:flex;align-items:center;gap:18px;margin-bottom:16px;padding:14px;background:var(--bg3);border-radius:var(--rsm);border:1px solid var(--border);}
+.setup-logo-box{position:relative;flex-shrink:0;cursor:pointer;}
+.setup-logo-box img{width:64px;height:64px;border-radius:10px;object-fit:cover;display:none;}
+.setup-logo-init{width:64px;height:64px;border-radius:10px;background:linear-gradient(135deg,var(--green),var(--blue));display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px;color:#000;}
+.setup-logo-hover{position:absolute;inset:0;border-radius:10px;background:rgba(0,0,0,.65);display:flex;align-items:center;justify-content:center;font-size:9px;color:#fff;opacity:0;transition:opacity .2s;}
+.setup-logo-box:hover .setup-logo-hover{opacity:1;}
+/* RESPONSIVE */
+@media(max-width:1100px){.stgrid{grid-template-columns:1fr 1fr;}.ab3{grid-template-columns:1fr 1fr;}}
+@media(max-width:700px){.stgrid,.ab3,.ab2,.g2,.g3,.govinline{grid-template-columns:1fr;}.tg4{grid-template-columns:1fr 1fr;}.evrow{grid-template-columns:1fr 1fr;}}
+::-webkit-scrollbar{width:4px;height:4px;}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px;}
+</style>
+</head>
+<body>
+<div id="toast"></div>
+<div class="moverlay" id="modal-ob" style="display:none">
+  <div class="mbox">
+    <div style="font-size:40px;margin-bottom:10px">&#128202;</div>
+    <h2>Bem-vindo ao <span style="color:var(--green)">CTM Dashboard</span></h2>
+    <p>O seu dashboard privado de gestão de fundo.<br>Configure o fundo e as suas contas para começar.</p>
+    <button class="btn btn-p btn-lg" onclick="closeOB()">&#9881;&#65039; Configurar Fundo</button>
+  </div>
+</div>
+<div id="topbar">
+  <div id="logo-area" onclick="document.getElementById('logo-input').click()" style="cursor:pointer">
+    <img id="logo-img" src="" alt="">
+    <div id="logo-init">CTM</div>
+    <div id="logo-hint">&#128247;</div>
+    <input type="file" id="logo-input" accept="image/*" style="display:none" onchange="uploadLogo(this)">
+  </div>
+  <div onclick="showTab(11)" style="cursor:pointer">
+    <div id="fund-nm">CTM Dashboard</div>
+    <div id="fund-sb">Member Edition</div>
+  </div>
+  <div id="apills" style="display:flex;gap:6px;margin-left:12px"></div>
+  <div class="tbsep"></div>
+  <div id="utc-clk">--:--:-- UTC</div>
+  <button class="tbb" onclick="showTab(2)">&#9999;&#65039; Registo</button>
+  <button class="tbb" onclick="exportJSON()">&#128190; JSON</button>
+  <label class="tbb" style="cursor:pointer">&#128194; Importar<input type="file" accept=".json" style="display:none" onchange="importJSON(this)"></label>
+  <button class="tbb acc" onclick="exportExcel()">&#8595; Export Excel</button>
+</div>
+<div id="tabs-bar">
+  <button class="tab-btn active" onclick="showTab(0)">Vista Consolidada</button>
+  <button class="tab-btn" onclick="showTab(1)">Contas</button>
+  <button class="tab-btn" onclick="showTab(2)">Registo Diário</button>
+  <button class="tab-btn" onclick="showTab(3)">Posições</button>
+  <button class="tab-btn" onclick="showTab(4)">Risco</button>
+  <button class="tab-btn" onclick="showTab(5)">Histórico</button>
+  <button class="tab-btn" onclick="showTab(6)">Performance</button>
+  <button class="tab-btn" onclick="showTab(7)">NAV</button>
+  <button class="tab-btn" onclick="showTab(8)">Governança</button>
+  <button class="tab-btn" onclick="showTab(9)">Checklist</button>
+  <button class="tab-btn" onclick="showTab(10)">Trades</button>
+  <button class="tab-btn" onclick="showTab(11)">&#9881;&#65039; Setup</button>
+</div>
+<div id="main">
+<div id="ver-banner"></div>
+<div id="bk-banner"></div>
+<div id="meta-banner"></div>
+<!-- TAB 0 -->
+<div class="tab-panel active" id="panel-0">
+  <div id="kpi-top"></div>
+  <div id="v-sparks" style="margin-bottom:12px"></div>
+  <div class="day-row"><div class="dpills" id="day-pills"></div><div class="day-lbl" id="day-lbl"></div></div>
+  <div style="font-family:var(--mono);font-size:8px;color:var(--text3);letter-spacing:2px;text-transform:uppercase;margin-bottom:8px">Estado do sistema</div>
+  <div class="stgrid" id="stgrid"></div>
+  <div style="font-family:var(--mono);font-size:8px;color:var(--text3);letter-spacing:2px;text-transform:uppercase;margin-bottom:8px">Performance &middot; sessão seleccionada</div>
+  <div class="psrow" id="psrow"></div>
+  <div id="ablocks-wrap"></div>
+  <div style="font-family:var(--mono);font-size:8px;color:var(--text3);letter-spacing:2px;text-transform:uppercase;margin-bottom:8px">Governança &middot; compliance diário</div>
+  <div class="govinline" id="gov-inline"></div>
+  <div class="possec">
+    <div class="poshead">
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="font-family:var(--mono);font-size:8px;color:var(--text3);text-transform:uppercase;letter-spacing:1.5px">Posições abertas</span>
+        <div class="pflts" id="pf-v"></div>
+      </div>
+      <button class="tbb btn-sm" onclick="exportExcel()">&#8595; Excel</button>
+    </div>
+    <div class="twrap"><table><thead id="pth-v"></thead><tbody id="ptb-v"></tbody></table></div>
+  </div>
+  <div class="cflow" id="cflow"></div>
+</div>
+<!-- TAB 1 -->
+<div class="tab-panel" id="panel-1">
+  <div style="margin-bottom:14px"><div style="font-size:18px;font-weight:700;margin-bottom:3px">Contas</div><div style="font-family:var(--mono);font-size:10px;color:var(--text3)" id="ct-sub">—</div></div>
+  <div id="ct-kpi"></div>
+  <div id="ct-details" style="margin-bottom:12px"></div>
+  <div class="card" style="margin-bottom:12px">
+    <div class="card-hd"><div class="card-t">Movimentos de Capital</div><div style="font-family:var(--mono);font-size:9px;color:var(--text3)" id="ct-mov-cnt">—</div></div>
+    <div class="twrap"><table><thead><tr><th>Data</th><th>Conta</th><th>Tipo</th><th>Valor</th><th>Nota</th></tr></thead><tbody id="ct-movs"></tbody></table></div>
+  </div>
+  <div id="ct-sparks" class="g2" style="margin-bottom:12px"></div>
+  <div class="card"><div class="card-hd"><div class="card-t">AUM por Sessão</div></div><div style="height:200px"><canvas id="c-aum"></canvas></div></div>
+</div>
+<!-- TAB 2 -->
+<div class="tab-panel" id="panel-2">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+    <div><div style="font-size:18px;font-weight:700;margin-bottom:2px">Registo Diário</div><div style="font-family:var(--mono);font-size:10px;color:var(--text3)">Entrada manual após fecho de sessão</div></div>
+    <div style="display:flex;gap:7px;align-items:center">
+      <select class="fs" id="load-day-sel" style="max-width:150px;font-size:9px" onchange="loadDay(this.value)"><option value="">&#128203; Carregar dia...</option></select>
+      <button class="btn btn-s btn-sm" onclick="clearDayForm()">+ Novo dia</button>
+    </div>
+  </div>
+  <div class="lsec"><div class="lshead"><div class="lstitle">&#128197; Cabeçalho da sessão</div></div>
+    <div class="lsbody"><div class="g2" style="gap:12px">
+      <div class="fg"><label class="fl">Data</label><input class="fi" type="date" id="day-date"></div>
+      <div class="fg"><label class="fl">Nota do dia</label><textarea class="fta" id="day-nota" placeholder="Observações..." style="min-height:50px"></textarea></div>
+    </div></div></div>
+  <div id="pos-sections"></div>
+  <div class="lsec"><div class="lshead"><div class="lstitle">&#128176; Dados da sessão</div></div>
+    <div class="lsbody">
+      <div id="sess-fields" style="margin-bottom:12px"></div>
+      <div style="padding:10px;background:var(--bg3);border-radius:var(--rsm);border:1px solid var(--border);display:flex;gap:18px;flex-wrap:wrap;align-items:flex-start">
+        <div><div class="fl" style="margin-bottom:3px">AUM ~EUR</div><div style="font-family:var(--mono);font-size:15px;font-weight:600;color:var(--green)" id="prev-aum">—</div></div>
+        <div id="prev-pnls" style="display:flex;gap:16px;flex-wrap:wrap"></div>
+        <div><div class="fl" style="margin-bottom:3px">Meta mês</div><div style="font-family:var(--mono);font-size:15px;font-weight:600" id="prev-meta">—</div></div>
+      </div>
+    </div></div>
+  <div class="lsec"><div class="lshead"><div class="lstitle">&#127919; Trades fechados nesta sessão</div><button class="btn btn-s btn-sm" onclick="addTrade()">+ Trade</button></div>
+    <div class="lsbody" id="trades-cont"><div style="color:var(--text3);font-family:var(--mono);font-size:10px;text-align:center;padding:14px">Sem trades registados.</div></div></div>
+  <div class="lsec"><div class="lshead"><div class="lstitle">&#128203; Eventos da sessão</div><button class="btn btn-s btn-sm" onclick="addEvent()">+ Evento</button></div>
+    <div class="lsbody" id="events-cont"><div style="color:var(--text3);font-family:var(--mono);font-size:10px;text-align:center;padding:14px">Sem eventos registados.</div></div></div>
+  <div class="lsec"><div class="lshead"><div class="lstitle">&#9989; Checklist de compliance</div></div><div class="lsbody" id="comp-form"></div></div>
+  <div class="lsec"><div class="lshead"><div class="lstitle">&#128221; Diário de trading</div></div>
+    <div class="lsbody"><textarea class="fta" id="day-diario" placeholder="Análise da sessão, decisões, aprendizagens..." style="min-height:90px"></textarea></div></div>
+  <div style="display:flex;gap:10px;align-items:center;padding:8px 0 22px">
+    <button class="btn btn-p btn-lg" onclick="saveDay()">&#9989; Guardar Sessão e Actualizar Dashboard</button>
+    <div id="save-ok" style="font-family:var(--mono);font-size:10px;color:var(--green);opacity:0;transition:opacity .5s"></div>
+  </div>
+</div>
+<!-- TAB 3 -->
+<div class="tab-panel" id="panel-3">
+  <div style="margin-bottom:14px"><div style="font-size:18px;font-weight:700;margin-bottom:2px">Posições</div><div style="font-family:var(--mono);font-size:10px;color:var(--text3)">Carteira actual — último registo</div></div>
+  <div id="p3-kpi"></div>
+  <div class="possec" style="margin-bottom:12px">
+    <div class="poshead"><div style="display:flex;align-items:center;gap:10px"><span style="font-family:var(--mono);font-size:8px;color:var(--text3);text-transform:uppercase;letter-spacing:1.5px">Posições abertas</span><div class="pflts" id="pf3"></div></div></div>
+    <div class="twrap"><table><thead id="pth3"></thead><tbody id="ptb3"></tbody></table></div>
+  </div>
+  <div class="g2">
+    <div class="card"><div class="card-hd"><div class="card-t">Top 10 Lucro %</div></div><div style="height:190px"><canvas id="c-top10"></canvas></div></div>
+    <div class="card"><div class="card-hd"><div class="card-t">Trust Distribution</div></div><div style="height:190px"><canvas id="c-trust-d"></canvas></div></div>
+  </div>
+  <div class="card" style="margin-top:12px"><div class="card-hd"><div class="card-t">Histórico de Saídas</div></div>
+    <div class="twrap"><table><thead><tr><th>Data</th><th>Activo</th><th>Mkt</th><th>Resultado</th><th>%</th><th>Rating</th><th>Nota</th></tr></thead><tbody id="tb-saidas"></tbody></table></div></div>
+</div>
+<!-- TAB 4 -->
+<div class="tab-panel" id="panel-4">
+  <div style="margin-bottom:14px"><div style="font-size:18px;font-weight:700;margin-bottom:2px">Gestão de Risco</div></div>
+  <div id="r-kpi"></div>
+  <div id="r-conc" class="g2" style="margin-bottom:12px"></div>
+  <div class="g2" style="margin-bottom:12px">
+    <div class="card"><div class="card-hd"><div class="card-t">Trust Score</div></div><div style="height:170px"><canvas id="c-trust"></canvas></div></div>
+    <div class="card"><div class="card-hd"><div class="card-t">Exposição por Mercado</div></div><div style="height:170px"><canvas id="c-exp-mkt"></canvas></div></div>
+  </div>
+  <div class="card" style="margin-bottom:12px"><div class="card-hd"><div class="card-t">Mapa de Risco</div></div>
+    <div class="twrap"><table><thead><tr><th>Activo</th><th>Mkt</th><th>Lucro %</th><th>Lucro</th><th>Valor</th><th>Trust</th><th>Risco</th><th>Conta</th></tr></thead><tbody id="tb-riskmap"></tbody></table></div></div>
+  <div class="card"><div class="card-hd"><div class="card-t">Drawdown Histórico</div></div><div style="height:190px"><canvas id="c-dd"></canvas></div></div>
+</div>
+<!-- TAB 5 -->
+<div class="tab-panel" id="panel-5">
+  <div style="margin-bottom:14px"><div style="font-size:18px;font-weight:700;margin-bottom:2px">Histórico do Fundo</div><div style="font-family:var(--mono);font-size:10px;color:var(--text3)" id="h-sub">—</div></div>
+  <div id="h-kpi"></div>
+  <div id="h-eq" class="g2" style="margin-bottom:12px"></div>
+  <div class="card" style="margin-bottom:12px"><div class="card-hd"><div class="card-t">Registo diário</div></div><div class="twrap"><table><thead id="h-thead"></thead><tbody id="h-tbody"></tbody></table></div></div>
+  <div class="card" style="margin-bottom:12px"><div class="card-hd"><div class="card-t">Performance por activo</div></div><div class="twrap"><table><thead><tr><th>Activo</th><th>Mkt</th><th>Melhor %</th><th>Pior %</th><th>Dias</th></tr></thead><tbody id="h-movers"></tbody></table></div></div>
+  <div class="card" style="margin-bottom:12px"><div class="card-hd"><div class="card-t">Resultado por Mês</div></div><div style="height:210px"><canvas id="c-hist-mes"></canvas></div></div>
+  <div class="card"><div class="card-hd"><div class="card-t">Análise Mensal</div><div id="h-mes-cnt" style="font-family:var(--mono);font-size:9px;color:var(--text3)">—</div></div><div class="twrap"><table><thead id="h-m-th"></thead><tbody id="h-m-td"></tbody></table></div></div>
+</div>
+<!-- TAB 6 -->
+<div class="tab-panel" id="panel-6">
+  <div style="margin-bottom:14px"><div style="font-size:18px;font-weight:700;margin-bottom:2px">Performance</div></div>
+  <div class="card" style="margin-bottom:12px">
+    <div class="card-hd"><div class="card-t">Definir Metas do M&ecirc;s</div><input class="fi" type="month" id="meta-mk" style="width:158px;font-size:10px" onchange="renderMetaEditor(true)"></div>
+    <div id="meta-editor"></div>
+  </div>
+  <div class="card" style="margin-bottom:12px"><div class="card-hd"><div class="card-t">Meta Mensal &middot; Progresso</div><div style="font-family:var(--mono);font-size:9px;color:var(--text3)" id="p-mes-lbl">—</div></div><div id="p-bars" style="display:flex;flex-direction:column;gap:10px"></div></div>
+  <div class="g2" style="margin-bottom:12px">
+    <div class="card"><div class="card-hd"><div class="card-t">Posições Fechadas &middot; Realizado</div><div id="p-fch-cnt" style="font-family:var(--mono);font-size:9px;color:var(--text3)">—</div></div><div class="twrap"><table><thead><tr><th>Activo</th><th>Mkt</th><th>Resultado</th><th>Conta</th><th>Data</th></tr></thead><tbody id="tb-pf"></tbody></table></div></div>
+    <div class="card"><div class="card-hd"><div class="card-t">Posições Abertas &middot; Não Realizado</div></div><div class="twrap"><table><thead><tr><th>Activo</th><th>Mkt</th><th>Lucro%</th><th>Lucro</th><th>Trust</th></tr></thead><tbody id="tb-pa"></tbody></table></div></div>
+  </div>
+  <div class="g2" style="margin-bottom:12px">
+    <div class="card"><div class="card-hd"><div class="card-t">% da Meta atingida · por mês</div></div><div style="height:190px"><canvas id="c-p-acum"></canvas></div></div>
+    <div class="card"><div class="card-hd"><div class="card-t">Excedente / Défice vs meta</div></div><div style="height:190px"><canvas id="c-p-defice"></canvas></div></div>
+  </div>
+  <div class="g2">
+    <div class="card"><div class="card-hd"><div class="card-t">Win Rate por Setup</div></div><div style="height:190px"><canvas id="c-setup"></canvas></div></div>
+    <div class="card"><div class="card-hd"><div class="card-t">Rating Distribution</div></div><div style="height:190px"><canvas id="c-rating"></canvas></div></div>
+  </div>
+</div>
+<!-- TAB 7 -->
+<div class="tab-panel" id="panel-7">
+  <div style="margin-bottom:14px"><div style="font-size:18px;font-weight:700;margin-bottom:2px">NAV &middot; Retorno oficial (TWR)</div><div style="font-family:var(--mono);font-size:10px;color:var(--text3)" id="nav-sub">Unitiza&ccedil;&atilde;o por quotas &mdash; imune a dep&oacute;sitos e levantamentos. Padr&atilde;o de fundo.</div></div>
+  <div id="nav-kpi"></div>
+  <div id="nav-warn"></div>
+  <div class="card" style="margin-bottom:12px"><div class="card-hd"><div class="card-t">Curva NAV &middot; base 100</div><div style="font-family:var(--mono);font-size:9px;color:var(--text3)" id="nav-ini">&mdash;</div></div><div style="height:270px"><canvas id="c-nav"></canvas></div></div>
+  <div class="g2">
+    <div class="card"><div class="card-hd"><div class="card-t">TWR mensal</div><div style="font-family:var(--mono);font-size:9px;color:var(--text3)">vs meta</div></div><div class="twrap"><table><thead id="nav-th"></thead><tbody id="tb-nav-twr"></tbody></table></div><div style="font-family:var(--mono);font-size:9px;color:var(--text3);line-height:1.65;padding:9px 13px">TWR = varia&ccedil;&atilde;o do NAV no m&ecirc;s, encadeada ao fecho do m&ecirc;s anterior. &Eacute; o n&uacute;mero oficial para comparar com a meta &mdash; ao contr&aacute;rio do lucro em euros, n&atilde;o &eacute; inflacionado por dinheiro novo.</div></div>
+    <div class="card"><div class="card-hd"><div class="card-t">Fluxos externos</div><div style="font-family:var(--mono);font-size:9px;color:var(--text3)" id="nav-fl-cnt">&mdash;</div></div><div class="twrap"><table><thead><tr><th>Data</th><th>Tipo</th><th>Conta</th><th>Valor</th><th>Nota</th></tr></thead><tbody id="tb-nav-fl"></tbody></table></div><div style="font-family:var(--mono);font-size:9px;color:var(--text3);line-height:1.65;padding:9px 13px">Registar em <b style="color:var(--text2)">Registo Di&aacute;rio &rarr; Eventos</b> com tipo <b style="color:var(--green)">dep&oacute;sito</b>, <b style="color:var(--red)">levantamento</b> ou <b style="color:var(--blue)">transfer&ecirc;ncia</b>. Sem isto, dinheiro novo aparece como lucro.</div></div>
+  </div>
+</div>
+<!-- TAB 8 -->
+<div class="tab-panel" id="panel-8">
+  <div style="margin-bottom:14px"><div style="font-size:18px;font-weight:700;margin-bottom:2px">Governança</div></div>
+  <div id="g-kpi" class="krow" style="margin-bottom:12px"></div>
+  <div class="g2" style="margin-bottom:12px">
+    <div class="card"><div class="card-hd"><div class="card-t">Timeline de Decisões</div></div><div id="g-tl" style="max-height:280px;overflow-y:auto"></div></div>
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div class="card" style="flex:1"><div class="card-hd"><div class="card-t">Entradas por Mercado</div></div><div style="height:130px"><canvas id="c-g-ent"></canvas></div></div>
+      <div class="card" style="flex:1"><div class="card-hd"><div class="card-t">Saídas por Mercado</div></div><div style="height:130px"><canvas id="c-g-sai"></canvas></div></div>
+    </div>
+  </div>
+  <div class="g2">
+    <div class="card"><div class="card-hd"><div class="card-t">Checklist Compliance &middot; Hoje</div></div><div id="g-chk"></div></div>
+    <div class="card"><div class="card-hd"><div class="card-t">Diário de Trading</div></div><div id="g-notas" style="max-height:280px;overflow-y:auto;display:flex;flex-direction:column;gap:7px"></div></div>
+  </div>
+</div>
+<!-- TAB 9 -->
+<div class="tab-panel" id="panel-9">
+  <div style="margin-bottom:14px"><div style="font-size:18px;font-weight:700;margin-bottom:2px">Checklist</div><div style="font-family:var(--mono);font-size:10px;color:var(--text3)" id="ck-sub">Disciplina di&aacute;ria por conta &mdash; regras, cumprimento e impacto no resultado</div></div>
+  <div id="ck-kpi"></div>
+  <div class="g2" style="margin-bottom:12px">
+    <div class="card">
+      <div class="card-hd"><div class="card-t">As minhas regras</div><button class="btn btn-s btn-sm" onclick="addRule()">+ Regra</button></div>
+      <div id="ck-rules"></div>
+      <div style="font-family:var(--mono);font-size:9px;color:var(--text3);line-height:1.65;padding:9px 14px;border-top:1px solid var(--border)">Estas regras aparecem no <b style="color:var(--text2)">Registo Di&aacute;rio</b>, para cada conta. Ao gravar a sess&atilde;o com pontos por fechar recebe um aviso.</div>
+    </div>
+    <div class="card">
+      <div class="card-hd"><div class="card-t">Regras mais falhadas</div><div style="font-family:var(--mono);font-size:9px;color:var(--text3)">&uacute;ltimos 90 dias</div></div>
+      <div style="height:200px;padding:8px"><canvas id="c-ck-fail"></canvas></div>
+    </div>
+  </div>
+  <div class="card" style="margin-bottom:12px">
+    <div class="card-hd"><div class="card-t">Disciplina vs Resultado</div><div style="font-family:var(--mono);font-size:9px;color:var(--text3)" id="ck-imp-sub">&mdash;</div></div>
+    <div id="ck-impacto"></div>
+  </div>
+  <div class="card">
+    <div class="card-hd"><div class="card-t">Hist&oacute;rico de cumprimento</div><div style="font-family:var(--mono);font-size:9px;color:var(--text3)" id="ck-hist-cnt">&mdash;</div></div>
+    <div class="twrap" style="max-height:340px;overflow:auto"><table><thead id="ck-hist-th"></thead><tbody id="ck-hist-tb"></tbody></table></div>
+  </div>
+</div>
+<!-- TAB 10 -->
+<div class="tab-panel" id="panel-10">
+  <div style="margin-bottom:14px"><div style="font-size:18px;font-weight:700;margin-bottom:2px">Track Record</div></div>
+  <div id="tr-kpi"></div>
+  <div class="g2" style="margin-bottom:12px">
+    <div class="card"><div class="card-hd"><div class="card-t">Equity Curve &middot; P&amp;L cumulativo</div></div><div style="height:170px"><canvas id="c-tr-eq"></canvas></div></div>
+    <div class="card"><div class="card-hd"><div class="card-t">P&amp;L por Trade</div></div><div style="height:170px"><canvas id="c-tr-bar"></canvas></div></div>
+  </div>
+  <div class="card" style="margin-bottom:12px">
+    <div class="card-hd"><div class="card-t">Todos os Trades</div>
+      <div style="display:flex;gap:5px" id="tr-flt-btns">
+        <button class="pflt active" onclick="filterTr('all',this)">Todos</button>
+        <button class="pflt" onclick="filterTr('win',this)">Vencedores</button>
+        <button class="pflt" onclick="filterTr('loss',this)">Perdedores</button>
+      </div>
+    </div>
+    <div class="twrap"><table><thead><tr><th>Data</th><th>Ticker</th><th>Setup</th><th>%</th><th>P&amp;L</th><th>Rating</th><th>Conta</th><th>Nota Saída</th></tr></thead><tbody id="tb-trades"></tbody></table></div>
+  </div>
+  <div class="card">
+    <div class="card-hd"><div class="card-t">Critérios de Rating CTM</div></div>
+    <div style="display:flex;gap:16px;flex-wrap:wrap;font-family:var(--mono);font-size:10px;color:var(--text2)">
+      <span>&#8805;30% &#8594; <span style="color:var(--yellow)">&#9733;&#9733;&#9733;&#9733;&#9733;</span></span>
+      <span>20-29.9% &#8594; <span style="color:var(--yellow)">&#9733;&#9733;&#9733;&#9733;</span>&#9734;</span>
+      <span>10-19.9% &#8594; <span style="color:var(--yellow)">&#9733;&#9733;&#9733;</span>&#9734;&#9734;</span>
+      <span>5-9.99% &#8594; <span style="color:var(--yellow)">&#9733;&#9733;</span>&#9734;&#9734;&#9734;</span>
+      <span>0-4.99% &#8594; <span style="color:var(--yellow)">&#9733;</span>&#9734;&#9734;&#9734;&#9734;</span>
+      <span style="color:var(--red)">Perda &#8594; &#10005;</span>
+    </div>
+  </div>
+</div>
+<!-- TAB 11: SETUP -->
+<div class="tab-panel" id="panel-11">
+  <div style="margin-bottom:18px"><div style="font-size:18px;font-weight:700;margin-bottom:2px">Setup do Fundo</div><div style="font-family:var(--mono);font-size:10px;color:var(--text3)">Configuração inicial — preencher uma vez</div></div>
+  <div class="card" style="max-width:700px;margin-bottom:12px">
+    <div class="card-hd"><div class="card-t">Identidade do Fundo</div></div>
+    <div class="setup-logo-wrap">
+      <div class="setup-logo-box" onclick="document.getElementById('logo-input').click()">
+        <img id="setup-logo-img" src="" alt="">
+        <div id="setup-logo-init">CTM</div>
+        <div class="setup-logo-hover">&#128247; Logo</div>
+      </div>
+      <div><div style="font-family:var(--mono);font-size:8px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:5px">Clique no logo para carregar imagem (PNG, JPG, SVG)</div><div style="font-family:var(--mono);font-size:10px;color:var(--text2)">Aparece no topbar e em todos os ecrãs do dashboard.</div></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="fg"><label class="fl">Nome do Fundo</label><input class="fi" id="cfg-name" placeholder="Alpha Fund" oninput="prevSetup()"></div>
+      <div class="fg"><label class="fl">Nome do Gestor</label><input class="fi" id="cfg-owner" placeholder="João Silva"></div>
+      <div class="fg"><label class="fl">Data de Início</label><input class="fi" type="date" id="cfg-start"></div>
+      <div class="fg"><label class="fl">Meta Mensal % (0&ndash;10, por omiss&atilde;o)</label><input class="fi" type="number" id="cfg-meta" value="10" min="0" max="10" step="0.5"></div>
+    </div>
+  </div>
+  <div class="card" style="max-width:700px;margin-bottom:12px">
+    <div class="card-hd"><div class="card-t">Contas — Activar até 3</div><span style="font-family:var(--mono);font-size:8px;color:var(--text3)">EUR / USD / BRL ou qualquer moeda</span></div>
+    <div class="acc-tog">
+      <div class="ts on" id="ts-a" onclick="toggleAcc('a')"></div>
+      <div class="acc-dot" style="background:var(--green)"></div>
+      <div class="acc-lbl" style="color:var(--green)">Conta A</div>
+      <div style="display:grid;grid-template-columns:110px 1fr 130px 120px;gap:9px;flex:1;align-items:center">
+        <select class="fs" id="cfg-cur-a" style="font-size:10px"><option value="EUR">EUR &#8212; Euro</option><option value="USD">USD &#8212; Dólar</option><option value="BRL">BRL &#8212; Real</option><option value="GBP">GBP &#8212; Libra</option><option value="CHF">CHF &#8212; Franco</option></select>
+        <input class="fi" id="cfg-broker-a" placeholder="Broker / Nome conta" style="font-size:10px">
+        <input class="fi" type="number" id="cfg-cap-a" placeholder="Capital inicial" style="font-size:10px">
+        <input class="fi" type="number" id="cfg-fx-a" value="1" step="0.0001" placeholder="Taxa p/EUR" style="font-size:10px" title="Quanto vale 1 desta moeda em EUR">
+      </div>
+    </div>
+    <div class="acc-tog">
+      <div class="ts" id="ts-b" onclick="toggleAcc('b')"></div>
+      <div class="acc-dot" style="background:var(--blue)"></div>
+      <div class="acc-lbl" style="color:var(--blue)">Conta B</div>
+      <div style="display:grid;grid-template-columns:110px 1fr 130px 120px;gap:9px;flex:1;align-items:center">
+        <select class="fs" id="cfg-cur-b" style="font-size:10px"><option value="USD">USD &#8212; Dólar</option><option value="EUR">EUR &#8212; Euro</option><option value="BRL">BRL &#8212; Real</option><option value="GBP">GBP &#8212; Libra</option><option value="CHF">CHF &#8212; Franco</option></select>
+        <input class="fi" id="cfg-broker-b" placeholder="Broker / Nome conta" style="font-size:10px">
+        <input class="fi" type="number" id="cfg-cap-b" placeholder="Capital inicial" style="font-size:10px">
+        <input class="fi" type="number" id="cfg-fx-b" value="0.92" step="0.0001" placeholder="Taxa p/EUR" style="font-size:10px">
+      </div>
+    </div>
+    <div class="acc-tog">
+      <div class="ts" id="ts-c" onclick="toggleAcc('c')"></div>
+      <div class="acc-dot" style="background:var(--yellow)"></div>
+      <div class="acc-lbl" style="color:var(--yellow)">Conta C</div>
+      <div style="display:grid;grid-template-columns:110px 1fr 130px 120px;gap:9px;flex:1;align-items:center">
+        <select class="fs" id="cfg-cur-c" style="font-size:10px"><option value="BRL">BRL &#8212; Real</option><option value="EUR">EUR &#8212; Euro</option><option value="USD">USD &#8212; Dólar</option><option value="GBP">GBP &#8212; Libra</option><option value="CHF">CHF &#8212; Franco</option></select>
+        <input class="fi" id="cfg-broker-c" placeholder="Broker / Nome conta" style="font-size:10px">
+        <input class="fi" type="number" id="cfg-cap-c" placeholder="Capital inicial" style="font-size:10px">
+        <input class="fi" type="number" id="cfg-fx-c" value="0.17" step="0.0001" placeholder="Taxa p/EUR" style="font-size:10px">
+      </div>
+    </div>
+    <div style="font-family:var(--mono);font-size:8px;color:var(--text3);padding:9px 14px;border-top:1px solid var(--border);margin-top:4px">&#128161; Taxa p/EUR = valor de 1 unidade em EUR. USD&#8776;0.92, BRL&#8776;0.17. Actualizar conforme taxa actual.</div>
+  </div>
+  <button class="btn btn-p btn-lg" onclick="saveConfig()">&#9989; Guardar Configuração</button>
+  <div class="card" style="max-width:700px;margin-top:12px">
+    <div class="card-hd"><div class="card-t">Cópias de Segurança</div><span style="font-family:var(--mono);font-size:8px;color:var(--text3)" id="snap-bk">—</span></div>
+    <div style="font-family:var(--mono);font-size:10px;color:var(--text2);line-height:1.7;padding:10px 14px 4px">Os seus dados são guardados <b style="color:var(--yellow)">apenas neste navegador</b>. Limpar o histórico ou mudar de computador apaga tudo. Exporte o ficheiro JSON com regularidade — é o seu backup real.</div>
+    <div style="display:flex;gap:8px;padding:8px 14px 12px">
+      <button class="btn btn-p btn-sm" onclick="exportJSON()">&#128190; Exportar backup (JSON)</button>
+      <button class="btn btn-s btn-sm" onclick="document.getElementById('imp-input2').click()">&#128193; Restaurar de ficheiro</button>
+      <input type="file" id="imp-input2" accept="application/json" style="display:none" onchange="importJSON(this)">
+    </div>
+    <div style="font-family:var(--mono);font-size:8px;color:var(--text3);text-transform:uppercase;letter-spacing:1.3px;padding:6px 14px;border-top:1px solid var(--border)">Backup separado por conta</div>
+    <div id="acc-exports"></div>
+    <div style="font-family:var(--mono);font-size:8px;color:var(--text3);text-transform:uppercase;letter-spacing:1.3px;padding:6px 14px;border-top:1px solid var(--border)">Cópias automáticas neste navegador (últimas 5)</div>
+    <div id="snap-list"></div>
+  </div>
+</div>
+</div>
+<div id="footer"><div id="ft-name">CTM Dashboard &middot; Member Edition</div><div id="ft-sess">Sessão &#8212; &middot; Fecho de sessão</div><div id="ft-ver" style="font-family:var(--mono);font-size:9px;color:var(--text3)">&mdash;</div></div>
+
+<script>
+const ACCS=['a','b','c'];
+const ACOL={a:'#3dffb0',b:'#00c8ff',c:'#ffd166'};
+const ACLS={a:'g',b:'b',c:'y'};
+let D={config:{fund_name:'',fund_owner:'',start_date:'',meta_pct:10,logo:'',accounts:{a:{active:true,cur:'EUR',broker:'',cap:0,fx:1},b:{active:false,cur:'USD',broker:'',cap:0,fx:0.92},c:{active:false,cur:'BRL',broker:'',cap:0,fx:0.17}}},dias:{},compliance:{}};
+const $=id=>document.getElementById(id);
+const set=(id,v)=>{const e=$(id);if(e)e.textContent=v;};
+const setH=(id,v)=>{const e=$(id);if(e)e.innerHTML=v;};
+const setV=(id,v)=>{const e=$(id);if(e&&v!=null)e.value=v;};
+const getV=id=>{const e=$(id);return e?e.value:'';};
+const fmtD=s=>{if(!s)return'—';const[y,m,d]=s.split('-');return`${d}/${m}/${y}`;};
+const today=()=>new Date().toISOString().split('T')[0];
+const SYM=c=>({EUR:'€',USD:'$',BRL:'R$',GBP:'£',CHF:'₣'}[c]||c);
+const fC=(v,cur)=>{if(v===null||v===undefined||v==='')return'—';const n=+v;return`${n<0?'-':''}${SYM(cur)}${Math.abs(n).toLocaleString('pt-PT',{minimumFractionDigits:2,maximumFractionDigits:2})}`;};
+const fP=v=>{if(v===null||v===undefined)return'—';const n=+v;return`${n>=0?'+':''}${n.toFixed(2)}%`;};
+const dkeys=()=>Object.keys(D.dias).sort();
+const lastDk=()=>{const d=dkeys();return d.length?d[d.length-1]:null;};
+const prevDk=k=>{const d=dkeys();const i=d.indexOf(k);return i>0?d[i-1]:null;};
+const aaccs=()=>ACCS.filter(a=>D.config.accounts[a]?.active);
+const toEUR=(v,a)=>(+v)*(+(D.config.accounts[a]?.fx)||1);
+
+// ══ SELEÇÃO DE CONTA (filtra todas as abas) ══
+let selAcc='all';
+const vaccs=()=>{const act=aaccs();return selAcc==='all'?act:(act.indexOf(selAcc)>=0?[selAcc]:act);};
+const isAll=()=>selAcc==='all'||aaccs().length<=1;
+const accName=a=>{const ac=D.config.accounts[a];return ac?(ac.cur+' · '+(ac.broker||'Conta '+a.toUpperCase())):a;};
+const inView=a=>vaccs().indexOf(a)>=0;
+// ══ METAS MENSAIS · 0 a 10% por conta e por mês ══
+const clampMeta=v=>Math.max(0,Math.min(10,isFinite(+v)?+v:0));
+const curMK=()=>new Date().toISOString().slice(0,7);
+function metaPct(a,mk){
+  const m=D.metas&&D.metas[mk]&&D.metas[mk][a];
+  if(m!=null&&m!=='')return clampMeta(m);
+  return clampMeta(D.config.meta_pct!=null?D.config.meta_pct:10);
+}
+const hasMeta=(a,mk)=>!!(D.metas&&D.metas[mk]&&D.metas[mk][a]!=null&&D.metas[mk][a]!=='');
+const capDays=a=>dkeys().filter(k=>{const v=+(D.dias[k]['cap_'+a]);return isFinite(v)&&v>0;});
+// Base do mês = fecho do mês anterior; senão 1º dia do mês; senão capital inicial
+function baseMes(a,mk){
+  const ds=capDays(a);
+  const prev=ds.filter(k=>k.slice(0,7)<mk);
+  if(prev.length)return +(D.dias[prev[prev.length-1]]['cap_'+a]);
+  const cur=ds.filter(k=>k.slice(0,7)===mk);
+  if(cur.length)return +(D.dias[cur[0]]['cap_'+a]);
+  return +((D.config.accounts[a]||{}).cap||0);
+}
+const metaVal=(a,mk)=>baseMes(a,mk)*metaPct(a,mk)/100;
+function realizMes(a,mk){return dkeys().filter(d=>d.slice(0,7)===mk).reduce((t,d)=>t+(+(D.dias[d]['realiz_'+a]||0)),0);}
+// ══ MIGRAÇÃO de dados antigos ══
+function migrate(){
+  if(!D.metas)D.metas={};
+  if(!D.config)D.config={};
+  D.config.schema=SCHEMA;D.config.app_ver=APP_VER;
+  if(!D.dias)D.dias={};
+  if(!D.compliance)D.compliance={};
+  if(!D.config)D.config={};
+  if(!D.config.accounts)D.config.accounts={};
+  if(D.config.meta_pct!=null)D.config.meta_pct=clampMeta(D.config.meta_pct);
+  ACCS.forEach(a=>{
+    if(!D.config.accounts[a])D.config.accounts[a]={active:a==='a',cur:'EUR',broker:'',cap:0,fx:1};
+  });
+  if(!Array.isArray(D.config.checklist)||!D.config.checklist.length)
+    D.config.checklist=CHK_DEF.map(x=>({k:x.k,l:x.l,on:true}));
+  // compliance antigo (plano do dia) -> por conta
+  Object.keys(D.compliance||{}).forEach(k=>{
+    const c=D.compliance[k];
+    if(!c||typeof c!=='object')return;
+    const ks=Object.keys(c);
+    if(!ks.length)return;
+    if(ks.every(x=>typeof c[x]==='boolean')){
+      const n={};ACCS.forEach(a=>{n[a]=JSON.parse(JSON.stringify(c));});D.compliance[k]=n;
+    }
+  });
+  const first=aaccs()[0]||'a';
+  dkeys().forEach(k=>{
+    const d=D.dias[k];
+    (d.trades||[]).forEach(t=>{if(!t.acc||ACCS.indexOf(t.acc)<0)t.acc=first;});
+    (d.eventos||[]).forEach(e=>{if(!e.acc||ACCS.indexOf(e.acc)<0)e.acc=first;});
+  });
+}
+function setAcc(a){
+  if(a!=='all'&&aaccs().indexOf(a)<0)return;
+  if(dirty&&!confirm('Tem alterações por guardar no Registo Diário.\n\nMudar de conta agora descarta-as. Continuar?'))return;
+  selAcc=a;try{localStorage.setItem('ctm_v3_acc',a);}catch(e){}
+  const keep=getV('day-date')||today();
+  buildDailyForms();
+  if(D.dias[keep])loadDay(keep);else{clearDayForm();setV('day-date',keep);}
+  renderCompForm();renderChecklist();renderAll();
+}
+const CH={};
+const dC=id=>{if(CH[id]){CH[id].destroy();delete CH[id];}};
+const COPT={responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#7a9ab5',font:{family:"'JetBrains Mono'",size:9}}}},scales:{x:{ticks:{color:'#3d5a70',font:{family:"'JetBrains Mono'",size:8}},grid:{color:'#1a2d3d'}},y:{ticks:{color:'#3d5a70',font:{family:"'JetBrains Mono'",size:8}},grid:{color:'#1a2d3d'}}}};
+const cRat=pct=>{const p=+pct;if(p<0)return 0;if(p>=30)return 5;if(p>=20)return 4;if(p>=10)return 3;if(p>=5)return 2;return 1;};
+const stH=r=>r===0?'<span class="stars z">✕</span>':`<span class="stars">${'★'.repeat(r)}${'☆'.repeat(5-r)}</span>`;
+const APP_VER='2026.08.09';
+const SCHEMA=3;
+const CHK_DEF=[{k:'plan',l:'Plano de trading revisto'},{k:'risk',l:'Regras de risco respeitadas'},{k:'screen',l:'Screenshots guardados'},{k:'review',l:'Review posições em aberto'},{k:'emotion',l:'Estado emocional verificado'},{k:'news',l:'Calendário económico consultado'},{k:'journal',l:'Diário actualizado'},{k:'stop',l:'Stop-loss verificado'}];
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+// ══ CHECKLIST · regras do membro, por dia E por conta ══
+function allRules(){
+  const r=D.config&&D.config.checklist;
+  return (Array.isArray(r)&&r.length)?r:CHK_DEF.map(x=>({k:x.k,l:x.l,on:true}));
+}
+const rules=()=>allRules().filter(r=>r&&r.on!==false);
+const compOf=(date,acc)=>{const d=D.compliance&&D.compliance[date];return (d&&d[acc])||{};};
+function setComp(date,acc,k,v){
+  if(!D.compliance)D.compliance={};
+  if(!D.compliance[date])D.compliance[date]={};
+  if(!D.compliance[date][acc])D.compliance[date][acc]={};
+  D.compliance[date][acc][k]=v;
+}
+function compStats(date,acc){
+  const rs=rules(),c=compOf(date,acc);
+  const pend=rs.filter(r=>!c[r.k]);
+  return {done:rs.length-pend.length,total:rs.length,pend:pend};
+}
+const compTouched=(date,acc)=>{const d=D.compliance&&D.compliance[date];return !!(d&&d[acc]&&Object.keys(d[acc]).length);};
+function pendentes(date,accs){
+  return (accs||vaccs()).map(a=>({acc:a,cur:(D.config.accounts[a]||{}).cur||a,itens:compStats(date,a).pend.map(r=>r.l)})).filter(x=>x.itens.length);
+}
+setInterval(()=>set('utc-clk',new Date().toUTCString().slice(17,25)+' UTC'),1000);
+document.addEventListener('DOMContentLoaded',()=>{
+  const s=localStorage.getItem('ctm_v3');if(s)try{D=JSON.parse(s);}catch(e){}
+  migrate();
+  try{const sa=localStorage.getItem('ctm_v3_acc');if(sa)selAcc=sa;}catch(e){}
+  if(aaccs().length===1)selAcc=aaccs()[0];
+  if(selAcc!=='all'&&aaccs().indexOf(selAcc)<0)selAcc='all';
+  setV('day-date',today());loadCfgForm();renderAll();refreshDaySel();renderCompForm();checkBackup();checkMetaBanner();renderSnaps();
+  setTimeout(buildDailyForms,80);
+  try{checkVersion();}catch(e){}
+  if(!D.config.fund_name)$('modal-ob').style.display='flex';
+});
+// ══ LOGO ══
+function uploadLogo(input){const f=input.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{D.config.logo=e.target.result;save();applyLogo(e.target.result);};r.readAsDataURL(f);input.value='';}
+function applyLogo(src){
+  const li=$('logo-img'),lp=$('logo-init'),si=$('setup-logo-img'),sp=$('setup-logo-init');
+  if(src){if(li){li.src=src;li.style.display='block';}if(lp)lp.style.display='none';if(si){si.src=src;si.style.display='block';}if(sp)sp.style.display='none';}
+  else{if(li)li.style.display='none';if(lp)lp.style.display='flex';if(si)si.style.display='none';if(sp)sp.style.display='flex';}
+}
+// ══ TABS ══
+let activeTab=0,selDay=null,loadedDay=null;
+function showTab(i){activeTab=i;document.querySelectorAll('.tab-panel').forEach((p,j)=>p.classList.toggle('active',j===i));document.querySelectorAll('.tab-btn').forEach((b,j)=>b.classList.toggle('active',j===i));renderTab(i);}
+function renderAll(){updTopbar();renderTab(activeTab);}
+function renderTab(i){if(i===0)renderVista();if(i===1)renderContas();if(i===3)renderPos3();if(i===4)renderRisco();if(i===5)renderHist();if(i===6)renderPerf();if(i===7)renderNAV();if(i===8)renderGov();if(i===9)renderChecklist();if(i===10)renderTrades();if(i===11)renderSnaps();checkBackup();checkMetaBanner();}
+function closeOB(){$('modal-ob').style.display='none';showTab(11);}
+// ══ TOPBAR ══
+function updTopbar(){
+  const c=D.config,nm=c.fund_name||'CTM Dashboard';
+  const ini=nm.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,3)||'CTM';
+  set('logo-init',ini);set('fund-nm',nm);
+  set('fund-sb',c.start_date?`Fund Management · Since ${fmtD(c.start_date)}`:"Member Edition");
+  if(c.logo)applyLogo(c.logo);else applyLogo('');
+  const pills=$('apills');
+  if(pills){const act=aaccs();let ph='';
+    if(act.length>1)ph+=`<div class="apill selp${selAcc==='all'?' on':''}" onclick="setAcc('all')" title="Consolidado de todas as contas"><div class="dot" style="background:linear-gradient(135deg,var(--green),var(--blue))"></div><span>Todas</span></div>`;
+    ph+=act.map(a=>{const ac=D.config.accounts[a];return `<div class="apill selp${selAcc===a?' on':''}" onclick="setAcc('${a}')" title="Ver apenas esta conta"><div class="dot" style="background:${ACOL[a]}"></div><span>${ac.cur} · ${ac.broker||'Conta '+a.toUpperCase()}</span></div>`;}).join('');
+    pills.innerHTML=ph;}
+  set('ft-ver','v'+APP_VER);set('ft-name',nm+' · '+(isAll()&&aaccs().length>1?'Consolidado':(vaccs()[0]?accName(vaccs()[0]):'Member Edition')));const lk=lastDk();set('ft-sess','Sessão '+(lk?fmtD(lk):'—')+' · Fecho de sessão');
+  const sli=$('setup-logo-init');if(sli)sli.textContent=ini;
+}
+// ══ DAY SELECTOR AUTOMÁTICO ══
+function refreshDaySel(){
+  const dk=dkeys(),last7=dk.slice(-7);
+  const wrap=$('day-pills');
+  if(wrap)wrap.innerHTML=last7.map(k=>{const dt=new Date(k+'T00:00:00');const lbl=dt.toLocaleDateString('pt-PT',{day:'2-digit',month:'short'});const active=k===(selDay||lastDk());return`<button class="dpill${active?' active':''}" onclick="selD('${k}',this)">${lbl}</button>`;}).join('');
+  const sk=selDay||lastDk();
+  if(sk){const dt=new Date(sk+'T00:00:00');const dia=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'][dt.getDay()];set('day-lbl',dia+' · '+fmtD(sk));}else set('day-lbl','');
+  const sel=$('load-day-sel');if(sel){sel.innerHTML='<option value="">📋 Carregar dia...</option>';[...dk].reverse().forEach(k=>{const o=document.createElement('option');o.value=k;o.textContent=fmtD(k);sel.appendChild(o);});}
+}
+function selD(k,btn){selDay=k;document.querySelectorAll('.dpill').forEach(b=>b.classList.remove('active'));if(btn)btn.classList.add('active');const dt=new Date(k+'T00:00:00');const dia=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'][dt.getDay()];set('day-lbl',dia+' · '+fmtD(k));if(activeTab===0)renderVista();}
+// ══ TRADES ══
+function getAllTrades(){const av=vaccs(),all=[];dkeys().forEach(d=>{(D.dias[d].trades||[]).forEach(t=>{if(av.indexOf(t.acc)>=0)all.push({...t,data:d});});});return all;}
+// ══ VISTA CONSOLIDADA ══
+function renderVista(){
+  renderSparks();
+  const c=D.config,accs=vaccs(),meta=+c.meta_pct||10;
+  const dk=selDay||lastDk(),day=dk?D.dias[dk]:null,prevDK=dk?prevDk(dk):null,prevDay=prevDK?D.dias[prevDK]:null;
+  const monthKey=dk?dk.slice(0,7):new Date().toISOString().slice(0,7);
+  const mDays=dkeys().filter(d=>d.startsWith(monthKey));
+  // KPI TOP
+  let kc='';
+  accs.forEach(a=>{
+    const ac=D.config.accounts[a],s=day?+(day['cap_'+a]||0):+ac.cap;
+    const rm=mDays.reduce((t,d)=>t+(+(D.dias[d]['realiz_'+a]||0)),0);
+    const rp=+ac.cap?(s-+ac.cap)/+ac.cap*100:0;
+    kc+=`<div class="kcell"><div class="klbl">Capital ${ac.cur}</div><div class="kval ${ACLS[a]}">${fC(s,ac.cur)}</div><div class="ksub">base ${fC(ac.cap,ac.cur)} · mês ${fC(rm,ac.cur)}</div></div>`;
+    kc+=`<div class="kcell"><div class="klbl">Retorno ${ac.cur} Mês</div><div class="kval ${rp>=0?'g':'r'}">${rp.toFixed(1)}%</div>${rp>=metaPct(a,monthKey)?'<div class="kmeta">meta</div>':''}<div class="ksub">${+ac.cap?(s-+ac.cap>=0?'+':'')+fC(s-+ac.cap,ac.cur):'—'}</div></div>`;
+  });
+  let aum=0;accs.forEach(a=>{const ac=D.config.accounts[a];aum+=(day?+(day['cap_'+a]||0):+ac.cap)*(+ac.fx||1);});
+  kc+=`<div class="kcell"><div class="klbl">AUM Total ~EUR</div><div class="kval">≈ ${fC(aum,'EUR')}</div><div class="ksub">Consolidado</div></div>`;
+  kc+=`<div class="kcell"><div class="klbl">Dias Activos</div><div class="kval y">${dkeys().length}</div><div class="ksub">${c.start_date?'Início: '+fmtD(c.start_date):'—'}</div></div>`;
+  setH('kpi-top',`<div class="krow" style="grid-template-columns:repeat(${accs.length*2+2},1fr);margin-bottom:12px">${kc}</div>`);
+  refreshDaySel();
+  // STATUS
+  let st='';
+  accs.forEach((a,i)=>{
+    const ac=D.config.accounts[a],pos=day?day['pos_'+a]||[]:[],s=day?+(day['cap_'+a]||0):0;
+    const lu=pos.reduce((t,p)=>t+(+(p.lucro||0)),0);
+    const cc=i===0?'gc':'gc';
+    st+=`<div class="stcard ${cc}"><div class="stlbl ${cc}">${ac.cur} · ${ac.broker||'Conta activa'}</div><div class="sttext">Capital ${fC(s,ac.cur)}. ${pos.length} posições. Lucro ${lu>=0?'positivo':'negativo'}: ${fC(lu,ac.cur)}.</div></div>`;
+  });
+  st+='<div class="stcard bc"><div class="stlbl bc">Mercados</div><div class="sttext">Euronext · NYSE · NASDAQ operacionais. Sem interrupções.</div></div>';
+  st+='<div class="stcard oc"><div class="stlbl oc">Atenção</div><div class="sttext">Monitorizar posições em aberto. Verificar stop-loss.</div></div>';
+  setH('stgrid',st);
+  // PERF SESSION
+  const allPos=[];accs.forEach(a=>{(day?day['pos_'+a]||[]:[]).forEach(p=>allPos.push({...p,acc:a}));});
+  const posPos=allPos.filter(p=>(+(p.lucro||0))>0).length;
+  const best=allPos.reduce((b,p)=>(+(p.lucro_pct||0))>(+(b.lucro_pct||0))?p:b,{activo:'—',lucro_pct:0});
+  const worst=allPos.reduce((w,p)=>(+(p.lucro_pct||0))<(+(w.lucro_pct||0))?p:w,{activo:'—',lucro_pct:0});
+  let totalEUR=0;accs.forEach(a=>{totalEUR+=toEUR(+(day?day['realiz_'+a]||0:0),a);});
+  let ps='';
+  accs.forEach(a=>{
+    const ac=D.config.accounts[a],rv=+(day?day['realiz_'+a]||0:0);
+    const curS=day?+(day['cap_'+a]||0):+ac.cap,prevS=prevDay?+(prevDay['cap_'+a]||0):+ac.cap,delta=curS-prevS;
+    ps+=`<div class="pscell"><div class="pslbl">Lucro ${ac.cur}</div><div class="psval ${rv>=0?'g':'r'}">${fC(rv,ac.cur)}</div><div class="pssub">${dk?fmtD(dk):'—'}</div></div>`;
+    ps+=`<div class="pscell"><div class="pslbl">Δ ${ac.cur} vs D-1</div><div class="psval ${delta>=0?'g':'r'}">${delta?fC(delta,ac.cur):'—'}</div><div class="pssub">${prevDK?fmtD(prevDK):'—'}</div></div>`;
+  });
+  ps+=`<div class="pscell"><div class="pslbl">Total ~EUR</div><div class="psval ${totalEUR>=0?'g':'r'}">≈ ${fC(totalEUR,'EUR')}</div><div class="pssub">consolidado</div></div>`;
+  ps+=`<div class="pscell"><div class="pslbl">Pos. positivas</div><div class="psval">${posPos} / ${allPos.length}</div></div>`;
+  ps+=`<div class="pscell"><div class="pslbl">Melhor</div><div class="psval g">${best.activo||'—'}</div><div class="pssub">${fP(best.lucro_pct)}</div></div>`;
+  ps+=`<div class="pscell"><div class="pslbl">Pior</div><div class="psval r">${worst.activo||'—'}</div><div class="pssub">${fP(worst.lucro_pct)}</div></div>`;
+  const psEl=$('psrow');if(psEl){psEl.innerHTML=ps;psEl.style.gridTemplateColumns=`repeat(${accs.length*2+4},1fr)`;}
+  // ACCOUNT BLOCKS
+  let ab='';
+  accs.forEach(a=>{
+    const ac=D.config.accounts[a],pos=day?day['pos_'+a]||[]:[],s=day?+(day['cap_'+a]||0):+ac.cap;
+    const prevS=prevDay?+(prevDay['cap_'+a]||0):+ac.cap,delta=s-prevS;
+    const luNet=pos.reduce((t,p)=>t+(+(p.lucro||0)),0);
+    const gains=pos.filter(p=>(+(p.lucro||0))>0).length,losses=pos.filter(p=>(+(p.lucro||0))<0).length;
+    const bP=pos.reduce((b,p)=>(+(p.lucro_pct||0))>(+(b.lucro_pct||0))?p:b,{activo:'—',lucro_pct:0});
+    const wP=pos.reduce((w,p)=>(+(p.lucro_pct||0))<(+(w.lucro_pct||0))?p:w,{activo:'—',lucro_pct:999});
+    const ats=getAllTrades().filter(t=>t.acc===a);
+    const wr=ats.length?(ats.filter(t=>(+(t.resultado||0))>0).length/ats.length*100).toFixed(1)+'%':'—';
+    const cl=ACLS[a];
+    ab+=`<div class="ablock">
+      <div class="abhead"><div class="abtitle">Conta ${ac.cur} · ${ac.broker||'Conta '+a.toUpperCase()}</div><span class="badge b${cl}">${fC(s,ac.cur)}</span></div>
+      <div class="abgrid ab4c" style="border-top:none">
+        <div class="abcell" style="border-bottom:1px solid var(--border)"><div class="ablbl">Lucro líquido</div><div class="abval ${luNet>=0?'g':'r'}">${fC(luNet,ac.cur)}</div></div>
+        <div class="abcell" style="border-bottom:1px solid var(--border)"><div class="ablbl">Posições</div><div class="abval">${pos.length}</div></div>
+        <div class="abcell" style="border-bottom:1px solid var(--border)"><div class="ablbl">Ganho / Perda</div><div class="abval">${gains} / ${losses}</div></div>
+        <div class="abcell" style="border-bottom:1px solid var(--border)"><div class="ablbl">Melhor</div><div class="abval g">${bP.activo||'—'}</div></div>
+        <div class="abcell"><div class="ablbl">Pior</div><div class="abval r">${pos.length?wP.activo:'—'}</div></div>
+        <div class="abcell"><div class="ablbl">Δ vs D-1</div><div class="abval ${delta>=0?'g':'r'}">${fC(delta,ac.cur)}</div></div>
+        <div class="abcell"><div class="ablbl">Caixa</div><div class="abval">${fC(day?day['caixa_'+a]||0:0,ac.cur)}</div></div>
+        <div class="abcell"><div class="ablbl">Win Rate</div><div class="abval y">${wr}</div></div>
+      </div>
+      <div class="abgrid ab3c" style="border-top:1px solid var(--border)">
+        <div class="abcell"><div class="ablbl">Risco</div><div class="abval y">${day?day['risco_'+a]||'—':'—'}%</div></div>
+        <div class="abcell"><div class="ablbl">Regime</div><div class="abval y">${day?day['regime_'+a]||'—':'—'}</div></div>
+        <div class="abcell"><div class="ablbl">Alocação</div><div class="abval y">${day?day['aloc_'+a]||'—':'—'}%</div></div>
+      </div>
+    </div>`;
+  });
+  setH('ablocks-wrap',`<div class="ablocks ${accs.length>=3?'ab3':'ab2'}">${ab}</div>`);
+  // GOV INLINE
+  const tdk=today(),_rs=rules();
+  let done=0,tot=0;accs.forEach(a=>{const st=compStats(tdk,a);done+=st.done;tot+=st.total;});
+  const govRows=_rs.slice(0,5).map(i=>{
+    const okN=accs.filter(a=>compOf(tdk,a)[i.k]).length,all=okN===accs.length&&accs.length>0;
+    return `<div class="govrow"><span class="govrlbl">${esc(i.l)}</span><span class="govrval ${all?'ok':'nd'}">${all?'✓ Conforme':(okN?'◐ '+okN+'/'+accs.length:'— Pendente')}</span></div>`;
+  }).join('');
+  const lastNote=lastDk()&&D.dias[lastDk()]?.diario?D.dias[lastDk()].diario:'Sem nota para esta sessão.';
+  setH('gov-inline',`
+    <div class="govblock"><div class="govhead"><div class="govtitle">Compliance · ${done}/${tot} itens</div></div><div class="govbody">${govRows}</div>
+      <div style="display:flex;gap:16px;padding:8px 13px;border-top:1px solid var(--border)">
+        <div style="text-align:center"><div style="font-family:var(--mono);font-size:16px;font-weight:700;color:var(--green)">${done}</div><div style="font-family:var(--mono);font-size:7px;color:var(--text3);text-transform:uppercase;letter-spacing:1px">completo</div></div>
+        <div style="text-align:center"><div style="font-family:var(--mono);font-size:16px;font-weight:700">${tot-done}</div><div style="font-family:var(--mono);font-size:7px;color:var(--text3);text-transform:uppercase;letter-spacing:1px">pendente</div></div>
+        <div style="text-align:center"><div style="font-family:var(--mono);font-size:16px;font-weight:700;color:var(--green)">${tot?Math.round(done/tot*100):0}%</div><div style="font-family:var(--mono);font-size:7px;color:var(--text3);text-transform:uppercase;letter-spacing:1px">score</div></div>
+      </div>
+    </div>
+    <div class="govblock"><div class="govhead"><div class="govtitle">Última nota · ${lastDk()?fmtD(lastDk()):'—'}</div></div>
+      <div class="govbody"><p style="font-family:var(--mono);font-size:10px;color:var(--text2);line-height:1.6">${lastNote}</p></div>
+    </div>`);
+  // POS TABLE
+  setH('pth-v',`<tr><th>Activo</th><th>Mkt</th><th>Lucro%</th><th>Lucro</th><th>Volume</th><th>Valor</th><th>Actual</th><th>Abertura</th><th>Trust</th><th>ΔD-1</th>${accs.length>1?'<th>Conta</th>':''}</tr>`);
+  setH('pf-v','<button class="pflt active" onclick="pvFilt(\'all\',this)">Todas</button>'+accs.map(a=>`<button class="pflt" onclick="pvFilt('${a}',this)">${D.config.accounts[a].cur}</button>`).join(''));
+  renderPVTable(allPos,'all');
+  // CAPITAL FLOW
+  let cf='';
+  accs.forEach(a=>{const ac=D.config.accounts[a],s=day?+(day['cap_'+a]||0):+ac.cap,cx=day?+(day['caixa_'+a]||0):0,rz=day?+(day['realiz_'+a]||0):0;const cl=ACLS[a];
+    cf+=`<div class="cfcell"><div class="cflbl">Capital ${ac.cur}</div><div class="cfval ${cl}">${fC(s,ac.cur)}</div></div><div class="cfcell"><div class="cflbl">Caixa ${ac.cur}</div><div class="cfval">${fC(cx,ac.cur)}</div></div>`;
+  });
+  const cfEl=$('cflow');if(cfEl){cfEl.innerHTML=cf;cfEl.style.gridTemplateColumns=`repeat(${accs.length*2},1fr)`;}
+}
+let pvF='all';
+function pvFilt(f,btn){pvF=f;document.querySelectorAll('#pf-v .pflt').forEach(b=>b.classList.remove('active'));if(btn)btn.classList.add('active');const dk=selDay||lastDk(),day=dk?D.dias[dk]:null;const all=[];vaccs().forEach(a=>{(day?day['pos_'+a]||[]:[]).forEach(p=>all.push({...p,acc:a}));});renderPVTable(all,f);}
+function renderPVTable(allPos,f){
+  const accs=vaccs();let rows=allPos;
+  if(f!=='all')rows=allPos.filter(p=>p.acc===f);
+  const tbody=$('ptb-v');if(!tbody)return;
+  if(!rows.length){tbody.innerHTML='<tr><td colspan="11" style="text-align:center;color:var(--text3)">—</td></tr>';return;}
+  tbody.innerHTML=rows.map(p=>{const ac=D.config.accounts[p.acc],lp=+(p.lucro_pct||0),d1=+(p.delta_d1||0);
+    return`<tr><td class="bd">${p.activo||'—'}</td><td class="dm">${p.mkt||'—'}</td><td class="${lp>=0?'g':'r'}">${fP(lp)}</td><td class="${lp>=0?'g':'r'}">${fC(p.lucro,ac.cur)}</td><td class="dm">${p.volume||'—'}</td><td class="dm">${p.valor?fC(p.valor,ac.cur):'—'}</td><td class="dm">${p.preco_atual||'—'}</td><td class="dm">${p.preco_ab||'—'}</td><td><div class="pw" style="width:55px"><div class="pb ${(+(p.trust||0))>=70?'g':'b'}" style="width:${p.trust||0}%"></div></div></td><td class="${d1>=0?'g':'r'}">${d1?fC(d1,ac.cur):'—'}</td>${accs.length>1?`<td class="${ACLS[p.acc]}">${ac.cur}</td>`:''}</tr>`;
+  }).join('');
+}
+// ══ CONTAS ══
+function renderContas(){
+  renderCtSparks();
+  const c=D.config,accs=vaccs(),dk=lastDk(),day=dk?D.dias[dk]:null;
+  set('ct-sub',c.fund_name||'CTM'+' · Detalhe de capital e movimentos');
+  let kc='';
+  accs.forEach(a=>{const ac=D.config.accounts[a],s=day?+(day['cap_'+a]||0):+ac.cap,ret=s-+ac.cap,rp=+ac.cap?(ret/+ac.cap*100):0;kc+=`<div class="kcell"><div class="klbl">Saldo ${ac.cur}</div><div class="kval ${ACLS[a]}">${fC(s,ac.cur)}</div><div class="ksub ${ret>=0?'up':'dn'}">${fP(rp)}</div></div>`;});
+  let aum=0;accs.forEach(a=>{const ac=D.config.accounts[a];aum+=(day?+(day['cap_'+a]||0):+ac.cap)*(+ac.fx||1);});
+  kc+=`<div class="kcell"><div class="klbl">AUM</div><div class="kval">≈ ${fC(aum,'EUR')}</div></div><div class="kcell"><div class="klbl">Dias</div><div class="kval y">${dkeys().length}</div></div>`;
+  setH('ct-kpi',`<div class="krow" style="grid-template-columns:repeat(${accs.length+2},1fr);margin-bottom:12px">${kc}</div>`);
+  let det='';
+  accs.forEach(a=>{
+    const ac=D.config.accounts[a],s=day?+(day['cap_'+a]||0):+ac.cap,ret=s-+ac.cap,rp=+ac.cap?(ret/+ac.cap*100):0;
+    const sess=dkeys().map(d=>+(D.dias[d]['realiz_'+a]||0));
+    const bestS=sess.length?Math.max(...sess):0,worstS=sess.length?Math.min(...sess):0;
+    det+=`<div class="card"><div class="card-hd"><div class="card-t">${ac.broker||'Conta'} ${ac.cur}</div><span class="badge b${ACLS[a]}">${fC(s,ac.cur)}</span></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;border:1px solid var(--border);border-radius:var(--rsm);overflow:hidden">
+        <div style="padding:8px 11px;border-right:1px solid var(--border);border-bottom:1px solid var(--border)"><div class="ablbl">Capital inicial</div><div class="abval">${fC(ac.cap,ac.cur)}</div></div>
+        <div style="padding:8px 11px;border-bottom:1px solid var(--border)"><div class="ablbl">Saldo actual</div><div class="abval ${ACLS[a]}">${fC(s,ac.cur)}</div></div>
+        <div style="padding:8px 11px;border-right:1px solid var(--border);border-bottom:1px solid var(--border)"><div class="ablbl">Retorno total</div><div class="abval ${ret>=0?'g':'r'}">${fP(rp)}</div></div>
+        <div style="padding:8px 11px;border-bottom:1px solid var(--border)"><div class="ablbl">Melhor sessão</div><div class="abval g">${fC(bestS,ac.cur)}</div></div>
+        <div style="padding:8px 11px;border-right:1px solid var(--border)"><div class="ablbl">Pior sessão</div><div class="abval r">${fC(worstS,ac.cur)}</div></div>
+        <div style="padding:8px 11px"><div class="ablbl">Win Rate</div><div class="abval y">${sess.length?(sess.filter(v=>v>0).length/sess.length*100).toFixed(1)+'%':'—'}</div></div>
+      </div></div>`;
+  });
+  const gcl=accs.length>=3?'g3':'g2';
+  setH('ct-details',`<div class="${gcl}">${det}</div>`);
+  const movs=[];dkeys().forEach(d=>{(D.dias[d].eventos||[]).forEach(e=>movs.push({data:d,...e}));});
+  set('ct-mov-cnt',`Histórico — ${movs.length}`);
+  const tb=$('ct-movs');if(tb)tb.innerHTML=movs.length?[...movs].reverse().map(m=>{const ac=D.config.accounts[m.acc];const cur=ac?ac.cur:'?';return`<tr><td>${fmtD(m.data)}</td><td class="dm">${cur} · ${ac?ac.broker||'':'' }</td><td><span class="badge b${m.tipo==='aporte'?'b':m.tipo==='saída'||m.tipo==='saida'?'r':'g'}">${m.tipo}</span></td><td>${fC(m.valor,cur)}</td><td class="dm">${m.nota||'—'}</td></tr>`;}).join(''):`<tr><td colspan="5" style="text-align:center;color:var(--text3)">—</td></tr>`;
+  dC('aum');const ds=dkeys();
+  if(ds.length){const ctx=$('c-aum')?.getContext('2d');if(ctx){const g=ctx.createLinearGradient(0,0,0,200);g.addColorStop(0,'rgba(61,255,176,.25)');g.addColorStop(1,'rgba(61,255,176,0)');CH['aum']=new Chart(ctx,{type:'line',data:{labels:ds.map(d=>fmtD(d)),datasets:[{label:'AUM ~EUR',data:ds.map(d=>{let s=0;vaccs().forEach(a=>{const ac=D.config.accounts[a];s+=(+(D.dias[d]['cap_'+a]||0))*(+ac.fx||1);});return s;}),borderColor:'#3dffb0',backgroundColor:g,borderWidth:2,pointRadius:2,tension:.4}]},options:{...COPT,plugins:{...COPT.plugins,legend:{display:false}}}});}}
+}
+// ══ POSIÇÕES TAB 3 ══
+let p3f='all';
+function renderPos3(){
+  const accs=vaccs(),dk=lastDk(),day=dk?D.dias[dk]:null;
+  const all=[];accs.forEach(a=>{(day?day['pos_'+a]||[]:[]).forEach(p=>all.push({...p,acc:a}));});
+  let rows=all;if(p3f!=='all'&&p3f!=='green'&&p3f!=='yellow'&&p3f!=='red')rows=all.filter(p=>p.acc===p3f);
+  if(p3f==='green')rows=all.filter(p=>(+(p.trust||0))>=70);
+  if(p3f==='yellow')rows=all.filter(p=>(+(p.trust||0))>=30&&(+(p.trust||0))<70);
+  if(p3f==='red')rows=all.filter(p=>(+(p.trust||0))<30);
+  setH('pf3','<button class="pflt '+( p3f==='all'?'active':'')+'" onclick="p3Filt(\'all\',this)">Todas</button>'+accs.map(a=>`<button class="pflt ${p3f===a?'active':''}" onclick="p3Filt('${a}',this)">${D.config.accounts[a].cur}</button>`).join('')+'<button class="pflt '+( p3f==='green'?'active':'')+'" onclick="p3Filt(\'green\',this)">Verde</button><button class="pflt '+( p3f==='yellow'?'active':'')+'" onclick="p3Filt(\'yellow\',this)">Amarelo</button><button class="pflt '+( p3f==='red'?'active':'')+'" onclick="p3Filt(\'red\',this)">Vermelho</button>');
+  const gains=all.filter(p=>(+(p.lucro||0))>0),losses=all.filter(p=>(+(p.lucro||0))<0);
+  const byP=all.slice().sort((a,b)=>(+(b.lucro_pct||0))-(+(a.lucro_pct||0)));
+  setH('p3-kpi',`<div class="krow c6" style="grid-template-columns:repeat(6,1fr);margin-bottom:12px"><div class="kcell"><div class="klbl">Total</div><div class="kval">${all.length}</div></div><div class="kcell"><div class="klbl">Em Ganho</div><div class="kval g">${gains.length}</div></div><div class="kcell"><div class="klbl">Em Perda</div><div class="kval r">${losses.length}</div></div><div class="kcell"><div class="klbl">Maior</div><div class="kval sm">${all.length?all.slice().sort((a,b)=>(+(b.valor||0))-(+(a.valor||0)))[0].activo:'—'}</div></div><div class="kcell"><div class="klbl">Melhor %</div><div class="kval g">${byP.length?fP(byP[0].lucro_pct):'—'}</div></div><div class="kcell"><div class="klbl">Pior %</div><div class="kval r">${byP.length?fP(byP[byP.length-1].lucro_pct):'—'}</div></div></div>`);
+  setH('pth3','<tr><th>Activo</th><th>Mkt</th><th>Lucro%</th><th>Lucro</th><th>Volume</th><th>Valor</th><th>Actual</th><th>Abertura</th><th>Trust</th><th>ΔD-1</th><th>Conta</th></tr>');
+  const tb=$('ptb3');if(tb)tb.innerHTML=rows.length?rows.map(p=>{const ac=D.config.accounts[p.acc],lp=+(p.lucro_pct||0),d1=+(p.delta_d1||0);return`<tr><td class="bd">${p.activo||'—'}</td><td class="dm">${p.mkt||'—'}</td><td class="${lp>=0?'g':'r'}">${fP(lp)}</td><td class="${lp>=0?'g':'r'}">${fC(p.lucro,ac.cur)}</td><td class="dm">${p.volume||'—'}</td><td class="dm">${p.valor?fC(p.valor,ac.cur):'—'}</td><td class="dm">${p.preco_atual||'—'}</td><td class="dm">${p.preco_ab||'—'}</td><td><div class="pw" style="width:55px"><div class="pb ${(+(p.trust||0))>=70?'g':'b'}" style="width:${p.trust||0}%"></div></div></td><td class="${d1>=0?'g':'r'}">${d1?fC(d1,ac.cur):'—'}</td><td class="${ACLS[p.acc]}">${ac.cur}</td></tr>`;}).join(''):`<tr><td colspan="11" style="text-align:center;color:var(--text3)">—</td></tr>`;
+  dC('top10');dC('trust-d');
+  const top=all.slice().sort((a,b)=>(+(b.lucro_pct||0))-(+(a.lucro_pct||0))).slice(0,10);
+  if(top.length){const ctx=$('c-top10')?.getContext('2d');if(ctx)CH['top10']=new Chart(ctx,{type:'bar',data:{labels:top.map(p=>p.activo),datasets:[{data:top.map(p=>+(p.lucro_pct||0)),backgroundColor:top.map(p=>(+(p.lucro_pct||0))>=0?'rgba(61,255,176,.7)':'rgba(255,77,77,.7)'),borderRadius:3}]},options:{...COPT,plugins:{...COPT.plugins,legend:{display:false}},indexAxis:'y'}});}
+  const tG=all.filter(p=>(+(p.trust||0))>=70).length,tY=all.filter(p=>(+(p.trust||0))>=30&&(+(p.trust||0))<70).length,tR=all.filter(p=>(+(p.trust||0))<30).length;
+  if(all.length){const ctx=$('c-trust-d')?.getContext('2d');if(ctx)CH['trust-d']=new Chart(ctx,{type:'doughnut',data:{labels:['Verde (≥70)','Amarelo (30-70)','Vermelho (<30)'],datasets:[{data:[tG,tY,tR],backgroundColor:['rgba(61,255,176,.8)','rgba(255,209,102,.8)','rgba(255,77,77,.8)'],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,cutout:'58%',plugins:{legend:{labels:{color:'#7a9ab5',font:{size:9}}}}}});}
+  const trades=getAllTrades();const tb2=$('tb-saidas');if(tb2)tb2.innerHTML=trades.length?[...trades].reverse().map(t=>{const ac=D.config.accounts[t.acc];return`<tr><td>${fmtD(t.data)}</td><td class="bd">${t.activo||'—'}</td><td class="dm">${t.mkt||'—'}</td><td class="${(+(t.resultado||0))>=0?'g':'r'}">${fC(t.resultado,ac?.cur)}</td><td class="${(+(t.resultado_pct||0))>=0?'g':'r'}">${fP(t.resultado_pct)}</td><td>${stH(+t.rating||0)}</td><td class="dm">${t.nota_saida||'—'}</td></tr>`;}).join(''):`<tr><td colspan="7" style="text-align:center;color:var(--text3)">—</td></tr>`;
+}
+function p3Filt(f,btn){p3f=f;document.querySelectorAll('#pf3 .pflt').forEach(b=>b.classList.remove('active'));if(btn)btn.classList.add('active');renderPos3();}
+// ══ RISCO ══
+function renderRisco(){
+  const accs=vaccs(),dk=lastDk(),day=dk?D.dias[dk]:null;
+  const all=[];accs.forEach(a=>{(day?day['pos_'+a]||[]:[]).forEach(p=>all.push({...p,acc:a}));});
+  let kc='';
+  accs.forEach(a=>{
+    const ac=D.config.accounts[a],pos=day?day['pos_'+a]||[]:[],s=day?+(day['cap_'+a]||0):+ac.cap;
+    const exp=pos.reduce((t,p)=>t+(+(p.valor||0)),0);
+    const ds=dkeys();let pk=+ac.cap,dd=0;ds.forEach(d=>{const sv=+(D.dias[d]['cap_'+a]||0);pk=Math.max(pk,sv);dd=Math.min(dd,sv-pk);});
+    kc+=`<div class="kcell"><div class="klbl">Exposição ${ac.cur}</div><div class="kval">${fC(exp,ac.cur)}</div><div class="ksub">${s?(exp/s*100).toFixed(1)+'% capital':'—'}</div></div>`;
+    kc+=`<div class="kcell"><div class="klbl">Drawdown ${ac.cur}</div><div class="kval r">${fC(dd,ac.cur)}</div><div class="ksub">${dkeys().length} sessões</div></div>`;
+  });
+  setH('r-kpi',`<div class="krow" style="grid-template-columns:repeat(${accs.length*2},1fr);margin-bottom:12px">${kc}</div>`);
+  const clrs=['#3dffb0','#00c8ff','#ffd166','#ff9f43','#a78bfa','#f97316'];
+  let conc='';accs.forEach(a=>{conc+=`<div class="card"><div class="card-hd"><div class="card-t">Concentração ${D.config.accounts[a].cur}</div></div><div style="height:170px"><canvas id="c-conc-${a}"></canvas></div></div>`;});
+  setH('r-conc',conc);
+  accs.forEach(a=>{dC('conc-'+a);const pos=day?day['pos_'+a]||[]:[],grp={};pos.forEach(p=>{grp[p.activo||'?']=(grp[p.activo||'?'||0])+(+(p.valor||0));});if(Object.keys(grp).length){const ctx=$('c-conc-'+a)?.getContext('2d');if(ctx)CH['conc-'+a]=new Chart(ctx,{type:'doughnut',data:{labels:Object.keys(grp),datasets:[{data:Object.values(grp),backgroundColor:clrs,borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,cutout:'55%',plugins:{legend:{labels:{color:'#7a9ab5',font:{size:9}}}}}});}});
+  dC('trust');dC('exp-mkt');
+  const tG=all.filter(p=>(+(p.trust||0))>=70).length,tY=all.filter(p=>(+(p.trust||0))>=30&&(+(p.trust||0))<70).length,tR=all.filter(p=>(+(p.trust||0))<30).length;
+  if(all.length){const ctx=$('c-trust')?.getContext('2d');if(ctx)CH['trust']=new Chart(ctx,{type:'doughnut',data:{labels:['Verde','Amarelo','Vermelho'],datasets:[{data:[tG,tY,tR],backgroundColor:['#3dffb0','#ffd166','#ff4d4d'],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,cutout:'55%',plugins:{legend:{labels:{color:'#7a9ab5',font:{size:9}}}}}});}
+  const mktD={};all.forEach(p=>{mktD[p.mkt||'Outro']=(mktD[p.mkt||'Outro']||0)+(+(p.valor||0));});
+  if(Object.keys(mktD).length){const ctx=$('c-exp-mkt')?.getContext('2d');if(ctx)CH['exp-mkt']=new Chart(ctx,{type:'bar',data:{labels:Object.keys(mktD),datasets:[{label:'Valor',data:Object.values(mktD),backgroundColor:'rgba(0,200,255,.6)',borderRadius:3}]},options:{...COPT,plugins:{...COPT.plugins,legend:{display:false}}}});}
+  const tb=$('tb-riskmap');if(tb)tb.innerHTML=all.length?all.map(p=>{const ac=D.config.accounts[p.acc],lp=+(p.lucro_pct||0),tr=+(p.trust||0);return`<tr><td class="bd">${p.activo||'—'}</td><td class="dm">${p.mkt||'—'}</td><td class="${lp>=0?'g':'r'}">${fP(lp)}</td><td class="${lp>=0?'g':'r'}">${fC(p.lucro,ac.cur)}</td><td class="dm">${p.valor?fC(p.valor,ac.cur):'—'}</td><td><div class="pw" style="width:55px"><div class="pb ${tr>=70?'g':'b'}" style="width:${tr}%"></div></div></td><td><span class="badge b${tr>=70?'g':tr>=30?'y':'r'}">${tr>=70?'BAIXO':tr>=30?'MÉDIO':'ALTO'}</span></td><td class="${ACLS[p.acc]}">${ac.cur}</td></tr>`;}).join(''):`<tr><td colspan="8" style="text-align:center;color:var(--text3)">—</td></tr>`;
+  dC('dd');const ds2=dkeys();
+  if(ds2.length){const ctx=$('c-dd')?.getContext('2d');if(ctx){const dsets=vaccs().map((a,i)=>{const ac=D.config.accounts[a];let pk=+ac.cap;const ddArr=[];ds2.forEach(d=>{const sv=+(D.dias[d]['cap_'+a]||0);pk=Math.max(pk,sv);ddArr.push(sv-pk);});return{label:ac.cur,data:ddArr,borderColor:['#3dffb0','#00c8ff','#ffd166'][i],borderWidth:2,pointRadius:1,tension:.3,fill:true,backgroundColor:['rgba(61,255,176,.1)','rgba(0,200,255,.1)','rgba(255,209,102,.1)'][i]};});CH['dd']=new Chart(ctx,{type:'line',data:{labels:ds2.map(d=>fmtD(d)),datasets:dsets},options:COPT});}}
+}
+// ══ HISTÓRICO ══
+function renderHist(){
+  renderHistMes();
+  const c=D.config,accs=vaccs(),ds=dkeys(),meta=+c.meta_pct||10;
+  set('h-sub',`Início: ${c.start_date?fmtD(c.start_date):'—'} · ${ds.length} sessões registadas`);
+  const lastD=lastDk()?D.dias[lastDk()]:null;
+  let kc='';
+  accs.forEach(a=>{
+    const ac=D.config.accounts[a],s=lastD?+(lastD['cap_'+a]||0):+ac.cap,ret=s-+ac.cap,rp=+ac.cap?(ret/+ac.cap*100):0;
+    const sessA=ds.map(d=>+(D.dias[d]['realiz_'+a]||0));
+    kc+=`<div class="kcell"><div class="klbl">Retorno ${ac.cur} total</div><div class="kval ${ACLS[a]}">${fC(ret,ac.cur)}</div><div class="ksub">${fP(rp)}</div></div>`;
+    kc+=`<div class="kcell"><div class="klbl">Melhor sessão ${ac.cur}</div><div class="kval g">${sessA.length?fC(Math.max(...sessA),ac.cur):'—'}</div></div>`;
+    kc+=`<div class="kcell"><div class="klbl">Win Rate ${ac.cur}</div><div class="kval y">${sessA.length?(sessA.filter(v=>v>0).length/sessA.length*100).toFixed(1)+'%':'—'}</div></div>`;
+  });
+  setH('h-kpi',`<div class="krow" style="grid-template-columns:repeat(${accs.length*3},1fr);margin-bottom:12px">${kc}</div>`);
+  let eq='';accs.forEach(a=>{eq+=`<div class="card"><div class="card-hd"><div class="card-t">Equity Curve ${D.config.accounts[a].cur} vs meta ${metaPct(a,curMK()).toFixed(1)}%/mês</div></div><div style="height:180px"><canvas id="c-eq-${a}"></canvas></div></div>`;});
+  setH('h-eq',eq);
+  const colors=['#3dffb0','#00c8ff','#ffd166'];
+  accs.forEach((a,i)=>{dC('eq-'+a);const ac=D.config.accounts[a];if(ds.length){const ctx=$('c-eq-'+a)?.getContext('2d');if(ctx){const eqD=ds.map(d=>+(D.dias[d]['cap_'+a]||0)),mL=ds.map((_,j)=>(+ac.cap)*Math.pow(1+meta/100,j/20));const g=ctx.createLinearGradient(0,0,0,180);g.addColorStop(0,colors[i]+'40');g.addColorStop(1,colors[i]+'00');CH['eq-'+a]=new Chart(ctx,{type:'line',data:{labels:ds.map(d=>fmtD(d)),datasets:[{label:'Equity',data:eqD,borderColor:colors[i],backgroundColor:g,borderWidth:2,pointRadius:2,tension:.4},{label:'Meta',data:mL,borderColor:'rgba(255,209,102,.5)',borderWidth:1,borderDash:[4,4],pointRadius:0}]},options:COPT});}}});
+  const thCols=['Data','Dia',...accs.map(a=>`Lucro ${D.config.accounts[a].cur}`),'Total ~EUR',...accs.map(a=>`Δ ${D.config.accounts[a].cur}`),'% Pos.','Eventos'];
+  setH('h-thead',`<tr>${thCols.map(c=>'<th>'+c+'</th>').join('')}</tr>`);
+  const tb=$('h-tbody');if(tb)tb.innerHTML=ds.length?[...ds].reverse().map(d=>{
+    const dy=D.dias[d],dt=new Date(d+'T00:00:00'),dia=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'][dt.getDay()];
+    const totEUR=accs.reduce((s,a)=>{const ac=D.config.accounts[a];return s+(+(dy['realiz_'+a]||0))*(+ac.fx||1);},0);
+    const allP=accs.flatMap(a=>dy['pos_'+a]||[]),posPos=allP.filter(p=>(+(p.lucro||0))>0).length;
+    return'<tr><td>'+fmtD(d)+'</td><td class="dm">'+dia+'</td>'+accs.map(a=>{const r=+(dy['realiz_'+a]||0);return`<td class="${r>=0?'g':'r'}">${fC(r,D.config.accounts[a].cur)}</td>`;}).join('')+`<td class="${totEUR>=0?'g':'r'}">≈ ${fC(totEUR,'EUR')}</td>`+accs.map(a=>{const r=+(dy['realiz_'+a]||0);return`<td class="${r>=0?'g':'r'}">${fC(r,D.config.accounts[a].cur)}</td>`;}).join('')+'<td>'+( allP.length?Math.round(posPos/allP.length*100)+'%':'—')+'</td><td>'+( (dy.eventos||[]).length||'—')+'</td></tr>';
+  }).join(''):`<tr><td colspan="${thCols.length}" style="text-align:center;color:var(--text3)">—</td></tr>`;
+  const aM={};getAllTrades().forEach(t=>{if(!aM[t.activo])aM[t.activo]={mkt:t.mkt,best:-999,worst:999,n:0};aM[t.activo].best=Math.max(aM[t.activo].best,+(t.resultado_pct||0));aM[t.activo].worst=Math.min(aM[t.activo].worst,+(t.resultado_pct||0));aM[t.activo].n++;});
+  const tb2=$('h-movers');if(tb2)tb2.innerHTML=Object.entries(aM).sort((a,b)=>b[1].best-a[1].best).map(([a,v])=>`<tr><td class="bd">${a}</td><td class="dm">${v.mkt||'—'}</td><td class="g">${fP(v.best)}</td><td class="r">${fP(v.worst)}</td><td class="dm">${v.n}</td></tr>`).join('')|| `<tr><td colspan="5" style="text-align:center;color:var(--text3)">—</td></tr>`;
+  const months={};ds.forEach(d=>{const mk=d.slice(0,7);if(!months[mk]){months[mk]={sess:0};accs.forEach(a=>{months[mk]['rP_'+a]=0;months[mk]['fP_'+a]=0;});}months[mk].sess++;accs.forEach(a=>{months[mk]['rP_'+a]+=(+(D.dias[d]['realiz_'+a]||0));const pos=D.dias[d]['pos_'+a]||[];months[mk]['fP_'+a]+=pos.reduce((s,p)=>s+(+(p.lucro||0)),0);});});
+  const thM=['Mês','Sess.',...accs.flatMap(a=>[`Real ${D.config.accounts[a].cur}`,`Meta ${D.config.accounts[a].cur}`,`Equity ${D.config.accounts[a].cur}`,'% Meta']),'Estado'];
+  set('h-mes-cnt',Object.keys(months).length+' meses');
+  setH('h-m-th',`<tr>${thM.map(c=>'<th>'+c+'</th>').join('')}</tr>`);
+  const tb3=$('h-m-td');if(tb3)tb3.innerHTML=Object.entries(months).reverse().map(([mk,m])=>{let allM=true;const cells=accs.map(a=>{const ac=D.config.accounts[a],mV=+ac.cap*(meta/100),eq=m['rP_'+a]+m['fP_'+a],pM=mV?(eq/mV*100):0;if(pM<100)allM=false;return`<td class="${m['rP_'+a]>=0?'g':'r'}">${fC(m['rP_'+a],ac.cur)}</td><td class="dm">${fC(mV,ac.cur)}</td><td class="${eq>=0?'g':'r'}">${fC(eq,ac.cur)}</td><td class="${pM>=100?'g':'y'}">${pM.toFixed(0)}%</td>`;}).join('');return`<tr><td class="bd">${mk}</td><td class="dm">${m.sess}</td>${cells}<td><span class="badge ${allM?'bg':'by'}">${allM?'✓ META':'Em progresso'}</span></td></tr>`;}).join('')|| `<tr><td colspan="${thM.length}" style="text-align:center;color:var(--text3)">—</td></tr>`;
+}
+// ══ PERFORMANCE ══
+function renderPerf(){
+  renderPerfCharts();
+  renderMetaEditor();
+  const c=D.config,accs=vaccs(),mk=curMK();
+  set('p-mes-lbl',mk);
+  const mDays=dkeys().filter(d=>d.startsWith(mk));
+  let bars='';
+  accs.forEach(a=>{
+    const ac=D.config.accounts[a],mV=metaVal(a,mk),real=mDays.reduce((t,d)=>t+(+(D.dias[d]['realiz_'+a]||0)),0),pct=mV?(real/mV*100):0;
+    bars+=`<div><div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-family:var(--mono);font-size:9px;color:var(--text2)">${ac.cur} · ${fC(real,ac.cur)} / meta ${fC(mV,ac.cur)} <span style="color:var(--text3)">(${metaPct(a,mk).toFixed(1)}%)</span></span><span style="font-family:var(--mono);font-size:9px;color:var(--green)">${pct.toFixed(0)}%</span></div><div class="pw"><div class="pb ${ACLS[a]}" style="width:${Math.min(100,pct)}%"></div></div></div>`;
+  });
+  setH('p-bars',bars);
+  const trades=getAllTrades();set('p-fch-cnt',String(trades.length));
+  const tb1=$('tb-pf');if(tb1)tb1.innerHTML=trades.length?[...trades].reverse().slice(0,20).map(t=>{const ac=D.config.accounts[t.acc],r=+(t.resultado||0);return`<tr><td class="bd">${t.activo||'—'}</td><td class="dm">${t.mkt||'—'}</td><td class="${r>=0?'g':'r'}">${fC(r,ac?.cur)}</td><td class="${ACLS[t.acc]}">${ac?.cur}</td><td>${fmtD(t.data)}</td></tr>`;}).join(''):`<tr><td colspan="5" style="text-align:center;color:var(--text3)">—</td></tr>`;
+  const lastD=lastDk()?D.dias[lastDk()]:null;const ab=[];accs.forEach(a=>{(lastD?lastD['pos_'+a]||[]:[]).forEach(p=>ab.push({...p,acc:a}));});
+  const tb2=$('tb-pa');if(tb2)tb2.innerHTML=ab.map(p=>{const ac=D.config.accounts[p.acc],lp=+(p.lucro_pct||0);return`<tr><td class="bd">${p.activo||'—'}</td><td class="dm">${p.mkt||'—'}</td><td class="${lp>=0?'g':'r'}">${fP(lp)}</td><td class="${lp>=0?'g':'r'}">${fC(p.lucro,ac.cur)}</td><td><div class="pw" style="width:55px"><div class="pb g" style="width:${p.trust||0}%"></div></div></td></tr>`;}).join('')|| `<tr><td colspan="5" style="text-align:center;color:var(--text3)">—</td></tr>`;
+  dC('setup');dC('rating');
+  const bS={};trades.forEach(t=>{const s=t.setup||'—';if(!bS[s])bS[s]={w:0,n:0};bS[s].n++;if((+(t.resultado||0))>0)bS[s].w++;});
+  if(Object.keys(bS).length){const ctx=$('c-setup')?.getContext('2d');if(ctx)CH['setup']=new Chart(ctx,{type:'bar',data:{labels:Object.keys(bS),datasets:[{label:'Win %',data:Object.values(bS).map(v=>v.n?(v.w/v.n*100):0),backgroundColor:'rgba(61,255,176,.7)',borderRadius:3}]},options:{...COPT,plugins:{...COPT.plugins,legend:{display:false}}}});}
+  const rC=[0,0,0,0,0,0];trades.forEach(t=>{const r=+t.rating||0;if(r>=0&&r<=5)rC[r]++;});
+  const ctx2=$('c-rating')?.getContext('2d');if(ctx2)CH['rating']=new Chart(ctx2,{type:'bar',data:{labels:['✕','★','★★','★★★','★★★★','★★★★★'],datasets:[{data:rC,backgroundColor:['#ff4d4d','#ff9f43','#ffd166','#3dffb0','#00c8ff','#a78bfa'],borderRadius:3}]},options:{...COPT,plugins:{...COPT.plugins,legend:{display:false}}}});
+}
+// ══════════════════════════════════════════════════════════════
+// NAV · TWR UNITIZADO (quotas) — padrão de fundo
+// O retorno oficial é a variação do NAV, não o lucro em euros:
+// dinheiro novo compra quotas ao NAV do dia e por isso não conta como lucro.
+// ══════════════════════════════════════════════════════════════
+const FLOWT={'depósito':1,'deposito':1,'levantamento':-1,'transferência':0,'transferencia':0};
+const isFlow=t=>Object.prototype.hasOwnProperty.call(FLOWT,String(t||'').toLowerCase());
+function flowVal(e){const t=String(e.tipo||'').toLowerCase(),s=FLOWT[t],v=+(e.valor||0);return s===0?v:s*Math.abs(v);}
+function extFlows(){
+  const f={};ACCS.forEach(a=>f[a]={});
+  dkeys().forEach(d=>{(D.dias[d].eventos||[]).forEach(e=>{
+    if(!isFlow(e.tipo)||!e.acc||!f[e.acc])return;
+    f[e.acc][d]=(f[e.acc][d]||0)+flowVal(e);
+  });});
+  return f;
+}
+function flowList(){
+  const av=vaccs(),out=[];dkeys().forEach(d=>{(D.dias[d].eventos||[]).forEach(e=>{if(isFlow(e.tipo)&&av.indexOf(e.acc)>=0)out.push(Object.assign({data:d},e));});});
+  return out;
+}
+function computeNAV(){
+  const fl=extFlows(),series={},twr={};
+  vaccs().forEach(a=>{
+    let units=null;const out=[];
+    dkeys().forEach(k=>{
+      const day=D.dias[k];if(!day)return;
+      const s=+(day['cap_'+a]);
+      if(!isFinite(s)||s<=0)return;
+      const f=+(fl[a][k]||0);
+      if(units===null)units=s/100;                       // dia 0 → NAV=100
+      else if(f){const pre=(s-f)/units;if(pre>0)units+=f/pre;}  // fluxo compra/vende quotas ao NAV do dia
+      if(units>0)out.push([k,Math.round(s/units*100)/100]);
+    });
+    series[a]=out;
+    const byM={};out.forEach(x=>{const m=x[0].slice(0,7);(byM[m]=byM[m]||[]).push(x[1]);});
+    let prevEnd=null;
+    Object.keys(byM).sort().forEach(m=>{
+      const arr=byM[m],start=prevEnd!=null?prevEnd:arr[0],end=arr[arr.length-1];
+      twr[m]=twr[m]||{};twr[m][a]=start>0?Math.round((end/start-1)*1000)/10:null;
+      prevEnd=end;
+    });
+  });
+  return {series,twr};
+}
+// Deteta saltos de capital sem fluxo registado — a causa nº1 de NAV corrompido
+function navSuspects(){
+  const fl=extFlows(),out=[];
+  vaccs().forEach(a=>{
+    const ds=dkeys().filter(k=>{const v=+(D.dias[k]['cap_'+a]);return isFinite(v)&&v>0;});
+    for(let i=1;i<ds.length;i++){
+      const prev=+(D.dias[ds[i-1]]['cap_'+a]),cur=+(D.dias[ds[i]]['cap_'+a]);
+      if(prev<=0)continue;
+      const chg=(cur-prev)/prev;
+      if(Math.abs(chg)>=0.30&&!fl[a][ds[i]])out.push({acc:a,data:ds[i],pct:chg*100,de:prev,para:cur});
+    }
+  });
+  return out;
+}
+function renderNAV(){
+  const accs=vaccs(),N=computeNAV(),fls=flowList();
+  let kc='';
+  accs.forEach(a=>{
+    const ac=D.config.accounts[a],s=N.series[a]||[],last=s.length?s[s.length-1]:null;
+    const v=last?last[1]:null,chg=v!=null?v-100:null;
+    kc+='<div class="kcell"><div class="klbl">NAV '+ac.cur+'</div><div class="kval '+(v==null?'':(v>=100?'g':'r'))+'">'+(v!=null?v.toFixed(2):'—')+'</div><div class="ksub">'+(last?'quota · '+fmtD(last[0]):'sem dados')+'</div></div>';
+    kc+='<div class="kcell"><div class="klbl">TWR acumulado '+ac.cur+'</div><div class="kval '+(chg==null?'':(chg>=0?'g':'r'))+'">'+(chg!=null?fP(chg):'—')+'</div><div class="ksub">desde '+(s.length?fmtD(s[0][0]):'—')+'</div></div>';
+  });
+  kc+='<div class="kcell"><div class="klbl">Fluxos externos</div><div class="kval b">'+fls.length+'</div><div class="ksub">depósitos · levantamentos</div></div>';
+  setH('nav-kpi','<div class="krow" style="grid-template-columns:repeat('+(accs.length*2+1)+',1fr);margin-bottom:12px">'+kc+'</div>');
+
+  const sus=navSuspects();
+  setH('nav-warn',sus.length?'<div style="background:rgba(255,159,67,.08);border:1px solid rgba(255,159,67,.35);border-radius:var(--r);padding:11px 14px;margin-bottom:12px"><div style="font-family:var(--mono);font-size:9px;color:var(--orange);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:6px">⚠ Possível fluxo externo não registado</div><div style="font-family:var(--mono);font-size:10px;color:var(--text2);line-height:1.7">'+sus.slice(0,6).map(x=>{const ac=D.config.accounts[x.acc];return fmtD(x.data)+' · '+ac.cur+' saltou '+(x.pct>=0?'+':'')+x.pct.toFixed(1)+'% ('+fC(x.de,ac.cur)+' → '+fC(x.para,ac.cur)+')';}).join('<br>')+'</div><div style="font-family:var(--mono);font-size:9px;color:var(--text3);margin-top:7px">Se foi dinheiro depositado ou levantado, registe-o como fluxo externo — caso contrário o NAV vai contá-lo como lucro.</div></div>':'');
+
+  dC('nav');
+  const allD=[];accs.forEach(a=>(N.series[a]||[]).forEach(x=>{if(allD.indexOf(x[0])<0)allD.push(x[0]);}));
+  allD.sort();
+  if(allD.length&&$('c-nav')){
+    const dsets=accs.map(a=>{const m={};(N.series[a]||[]).forEach(x=>{m[x[0]]=x[1];});
+      return{label:'NAV '+D.config.accounts[a].cur,data:allD.map(d=>m[d]!=null?m[d]:null),borderColor:ACOL[a],borderWidth:2,pointRadius:0,tension:.25,spanGaps:true};});
+    dsets.push({label:'Base 100',data:allD.map(()=>100),borderColor:'rgba(255,255,255,.25)',borderWidth:1,borderDash:[5,4],pointRadius:0});
+    CH['nav']=new Chart($('c-nav').getContext('2d'),{type:'line',data:{labels:allD.map(fmtD),datasets:dsets},options:COPT});
+    set('nav-ini','série desde '+fmtD(allD[0])+' · '+allD.length+' sessões');
+  }else set('nav-ini','sem dados — registe o capital no Registo Diário');
+
+  setH('nav-th','<tr><th>Mês</th>'+accs.map(a=>'<th>'+D.config.accounts[a].cur+'</th>').join('')+'<th>Meta</th></tr>');
+  const ms=Object.keys(N.twr).sort();
+  setH('tb-nav-twr',ms.length?ms.map(m=>{
+    const mp=accs.map(a=>metaPct(a,m)),same=mp.every(v=>v===mp[0]);
+    const mtxt=!mp.length?'—':(same?mp[0].toFixed(1)+'%':Math.min.apply(null,mp).toFixed(1)+'–'+Math.max.apply(null,mp).toFixed(1)+'%');
+    return '<tr><td class="bd">'+m+'</td>'+accs.map(a=>{const v=N.twr[m]?N.twr[m][a]:null;return v==null?'<td class="dm">—</td>':'<td class="'+(v>=0?'g':'r')+'">'+(v>=0?'+':'')+v.toFixed(1)+'%</td>';}).join('')+'<td class="dm">'+mtxt+'</td></tr>';}).join(''):'<tr><td colspan="'+(accs.length+2)+'" style="text-align:center;color:var(--text3)">—</td></tr>');
+
+  set('nav-fl-cnt',fls.length?fls.length+' registados':'nenhum');
+  setH('tb-nav-fl',fls.length?fls.slice().reverse().map(e=>{const ac=D.config.accounts[e.acc],sv=flowVal(e);
+    return'<tr><td>'+fmtD(e.data)+'</td><td><span class="badge b'+(sv>=0?'g':'r')+'">'+(e.tipo||'—')+'</span></td><td class="'+(ACLS[e.acc]||'')+'">'+(ac?ac.cur:'—')+'</td><td class="'+(sv>=0?'g':'r')+'">'+fC(sv,ac?ac.cur:'')+'</td><td class="dm">'+(e.nota||'—')+'</td></tr>';}).join(''):'<tr><td colspan="5" style="text-align:center;color:var(--text3)">Nenhum fluxo externo registado</td></tr>');
+}
+// ══ SPARKLINES / GRÁFICOS EM FALTA ══
+const SPKOPT={responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{display:false},y:{display:false}},elements:{point:{radius:0}}};
+function sparkInto(cid,key,vals,labels,h){
+  dC(key);const el=$(cid);if(!el||vals.length<2)return;
+  const up=vals[vals.length-1]>=vals[0],col=up?'#3dffb0':'#ff4d4d';
+  const ctx=el.getContext('2d'),g=ctx.createLinearGradient(0,0,0,h);
+  g.addColorStop(0,col+'55');g.addColorStop(1,col+'00');
+  CH[key]=new Chart(ctx,{type:'line',data:{labels:labels,datasets:[{data:vals,borderColor:col,backgroundColor:g,borderWidth:1.7,fill:true,tension:.35}]},options:SPKOPT});
+}
+function renderSparks(){
+  const accs=vaccs(),ds=dkeys();
+  if(!accs.length||ds.length<2){setH('v-sparks','');return;}
+  setH('v-sparks','<div class="krow" style="grid-template-columns:repeat('+accs.length+',1fr)">'+accs.map(a=>{const ac=D.config.accounts[a],vals=ds.map(d=>+(D.dias[d]['cap_'+a]||0));
+    const d0=vals[0],dn=vals[vals.length-1],pc=d0?((dn-d0)/d0*100):0;
+    return'<div class="kcell"><div class="klbl">Curva '+ac.cur+' · '+ds.length+' sessões <span class="'+(pc>=0?'ksub up':'ksub dn')+'" style="margin-left:4px">'+fP(pc)+'</span></div><div style="height:50px"><canvas id="c-spk-'+a+'"></canvas></div></div>';}).join('')+'</div>');
+  accs.forEach(a=>sparkInto('c-spk-'+a,'spk-'+a,ds.map(d=>+(D.dias[d]['cap_'+a]||0)),ds.map(fmtD),50));
+}
+function renderCtSparks(){
+  const accs=vaccs(),ds=dkeys();
+  if(!accs.length||ds.length<2){setH('ct-sparks','');return;}
+  setH('ct-sparks',accs.map(a=>{const ac=D.config.accounts[a];
+    return'<div class="card"><div class="card-hd"><div class="card-t">Evolução '+ac.cur+'</div><span class="badge b'+ACLS[a]+'">'+(ac.broker||'Conta '+a.toUpperCase())+'</span></div><div style="height:110px"><canvas id="c-ctspk-'+a+'"></canvas></div></div>';}).join(''));
+  accs.forEach(a=>sparkInto('c-ctspk-'+a,'ctspk-'+a,ds.map(d=>+(D.dias[d]['cap_'+a]||0)),ds.map(fmtD),110));
+}
+function realizByMonth(){
+  const accs=vaccs(),byM={};
+  dkeys().forEach(d=>{const m=d.slice(0,7);byM[m]=byM[m]||{};accs.forEach(a=>{byM[m][a]=(byM[m][a]||0)+(+(D.dias[d]['realiz_'+a]||0));});});
+  return byM;
+}
+function renderHistMes(){
+  dC('hist-mes');const el=$('c-hist-mes');if(!el)return;
+  const accs=vaccs(),byM=realizByMonth(),ms=Object.keys(byM).sort();
+  if(!ms.length||!accs.length)return;
+  CH['hist-mes']=new Chart(el.getContext('2d'),{type:'bar',data:{labels:ms,datasets:accs.map(a=>({label:D.config.accounts[a].cur,data:ms.map(m=>+(byM[m][a]||0).toFixed(2)),backgroundColor:ACOL[a]+'40',borderColor:ACOL[a],borderWidth:1.5,borderRadius:3}))},options:COPT});
+}
+function renderPerfCharts(){
+  const accs=vaccs(),byM=realizByMonth(),ms=Object.keys(byM).sort();
+  dC('p-acum');dC('p-defice');
+  if(!ms.length||!accs.length)return;
+  const metaV=(a,m)=>metaVal(a,m);
+  if($('c-p-acum'))CH['p-acum']=new Chart($('c-p-acum').getContext('2d'),{type:'bar',data:{labels:ms,datasets:accs.map(a=>{
+    const dat=ms.map(m=>{const mv=metaV(a,m);return mv?+((byM[m][a]/mv)*100).toFixed(1):0;});
+    return{label:D.config.accounts[a].cur+' % meta',data:dat,borderWidth:1.5,borderRadius:3,
+      backgroundColor:dat.map(v=>v>=100?'rgba(61,255,176,.65)':v>=0?'rgba(255,209,102,.5)':'rgba(255,77,77,.45)'),
+      borderColor:dat.map(v=>v>=100?'#3dffb0':v>=0?'#ffd166':'#ff4d4d')};})},options:COPT});
+  if($('c-p-defice'))CH['p-defice']=new Chart($('c-p-defice').getContext('2d'),{type:'bar',data:{labels:ms,datasets:accs.map(a=>{
+    const dat=ms.map(m=>+((byM[m][a]-metaV(a,m)).toFixed(2)));
+    return{label:D.config.accounts[a].cur,data:dat,borderWidth:1.5,borderRadius:3,
+      backgroundColor:dat.map(v=>v>=0?'rgba(61,255,176,.55)':'rgba(255,77,77,.45)'),
+      borderColor:dat.map(v=>v>=0?'#3dffb0':'#ff4d4d')};})},options:COPT});
+}
+// ══ COPIAS DE SEGURANÇA ══
+const SNAPK='ctm_v3_snapshots';
+function snapshot(){
+  try{
+    const t=today();let s=JSON.parse(localStorage.getItem(SNAPK)||'[]');
+    const j=JSON.stringify(D);
+    if(s.length&&s[s.length-1].d===t)s[s.length-1]={d:t,j:j};else s.push({d:t,j:j});
+    while(s.length>5)s.shift();
+    localStorage.setItem(SNAPK,JSON.stringify(s));
+  }catch(e){try{localStorage.removeItem(SNAPK);}catch(e2){}}
+}
+function listSnaps(){try{return JSON.parse(localStorage.getItem(SNAPK)||'[]');}catch(e){return[];}}
+function restoreSnap(i){
+  const s=listSnaps();if(!s[i])return;
+  if(!confirm('Restaurar a cópia de '+fmtD(s[i].d)+'?\n\nOs dados actuais serão substituídos.'))return;
+  try{D=JSON.parse(s[i].j);migrate();save();loadCfgForm();buildDailyForms();selDay=null;loadedDay=null;refreshDaySel();renderCompForm();renderAll();checkMetaBanner();showToast('♻️ Cópia de '+fmtD(s[i].d)+' restaurada');}
+  catch(e){showToast('⚠️ Cópia corrompida');}
+}
+function renderSnaps(){
+  renderAccExports();
+  const el=$('snap-list');if(!el)return;
+  const s=listSnaps();
+  el.innerHTML=s.length?s.slice().reverse().map((x,ri)=>{const i=s.length-1-ri;
+    return'<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 13px;border-bottom:1px solid var(--border)"><span style="font-family:var(--mono);font-size:10px;color:var(--text2)">'+fmtD(x.d)+' <span style="color:var(--text3)">· '+Math.round(x.j.length/1024)+' KB</span></span><button class="btn btn-s btn-sm" onclick="restoreSnap('+i+')">Restaurar</button></div>';}).join(''):'<div style="font-family:var(--mono);font-size:10px;color:var(--text3);padding:12px 13px;text-align:center">Sem cópias — guarde uma sessão para criar a primeira.</div>';
+  const lb=D.config.last_backup;
+  set('snap-bk',lb?'Último ficheiro exportado: '+fmtD(lb):'Nunca exportou um ficheiro de backup');
+}
+function backupAge(){
+  const b=D.config.last_backup;if(!b)return null;
+  const diff=(new Date(today()+'T00:00:00')-new Date(b+'T00:00:00'))/86400000;
+  return isFinite(diff)?Math.round(diff):null;
+}
+function checkBackup(){
+  const el=$('bk-banner');if(!el)return;
+  if(!dkeys().length){el.innerHTML='';return;}
+  const age=backupAge();
+  if(age!==null&&age<7){el.innerHTML='';return;}
+  el.innerHTML='<div style="display:flex;align-items:center;gap:12px;background:rgba(255,209,102,.07);border:1px solid rgba(255,209,102,.3);border-radius:var(--r);padding:10px 14px;margin-bottom:12px"><span style="font-family:var(--mono);font-size:10px;color:var(--yellow);flex:1">⚠ '+(age===null?'Ainda não exportou nenhum backup':'Último backup há '+age+' dias')+' — os dados vivem apenas neste navegador. Se limpar o histórico, perde tudo.</span><button class="tbb acc btn-sm" onclick="exportJSON()">Fazer backup agora</button></div>';
+}
+
+// ══ EDITOR DE METAS MENSAIS (0–10% por conta) ══
+let _metaSig='',_metaT;
+const metaMK=()=>{const e=$('meta-mk');return (e&&e.value)||curMK();};
+function mesNome(mk){try{const d=new Date(mk+'-01T00:00:00');return d.toLocaleDateString('pt-PT',{month:'long',year:'numeric'});}catch(e){return mk;}}
+function renderMetaEditor(force){
+  const box=$('meta-editor');if(!box)return;
+  const mkEl=$('meta-mk');if(mkEl&&!mkEl.value)mkEl.value=curMK();
+  const mk=metaMK(),accs=vaccs();
+  const sig=mk+'|'+accs.join(',');
+  if(!force&&sig===_metaSig&&box.children.length)return;   // não reconstruir durante o arrasto
+  _metaSig=sig;
+  if(!accs.length){box.innerHTML='<div style="font-family:var(--mono);font-size:10px;color:var(--text3);padding:12px 14px;text-align:center">Active uma conta no Setup.</div>';return;}
+  box.innerHTML=accs.map(a=>{
+    const ac=D.config.accounts[a],pv=metaPct(a,mk),base=baseMes(a,mk),mv=base*pv/100,def=!hasMeta(a,mk);
+    return '<div class="mrow">'
+      +'<div><div style="font-family:var(--mono);font-size:11px;color:'+ACOL[a]+'">'+ac.cur+'</div><div class="mtag">'+(ac.broker||'Conta '+a.toUpperCase())+(def?' · por omissão':'')+'</div></div>'
+      +'<input type="range" min="0" max="10" step="0.5" value="'+pv+'" id="meta-r-'+a+'" oninput="setMeta(\''+a+'\',this.value)">'
+      +'<input class="fi" type="number" min="0" max="10" step="0.5" value="'+pv+'" id="meta-n-'+a+'" oninput="setMeta(\''+a+'\',this.value)" style="font-size:10px;text-align:center">'
+      +'<div style="text-align:right"><div style="font-family:var(--mono);font-size:11px;color:var(--green)" id="meta-v-'+a+'">'+fC(mv,ac.cur)+'</div><div class="mtag" id="meta-b-'+a+'">base '+fC(base,ac.cur)+'</div></div>'
+      +'</div>';
+  }).join('')
+  +'<div style="font-family:var(--mono);font-size:9px;color:var(--text3);line-height:1.65;padding:10px 14px">A meta é uma percentagem da <b style="color:var(--text2)">base do mês</b> (capital ao fecho do mês anterior). Ajustável entre <b style="color:var(--text2)">0% e 10%</b>, a definir no início de cada mês. Guarda automaticamente e vale só para o mês escolhido.</div>';
+}
+function setMeta(a,v){
+  const mk=metaMK(),val=clampMeta(v);
+  if(!D.metas)D.metas={};
+  if(!D.metas[mk])D.metas[mk]={};
+  D.metas[mk][a]=val;
+  const ac=D.config.accounts[a]||{};
+  set('meta-v-'+a,fC(baseMes(a,mk)*val/100,ac.cur));
+  const nEl=$('meta-n-'+a);if(nEl&&+nEl.value!==val)nEl.value=val;
+  const rEl=$('meta-r-'+a);if(rEl&&+rEl.value!==val)rEl.value=val;
+  save();checkMetaBanner();
+  clearTimeout(_metaT);_metaT=setTimeout(()=>{renderPerfCharts();if(activeTab===6)renderPerf();},400);
+}
+function checkMetaBanner(){
+  const el=$('meta-banner');if(!el)return;
+  const mk=curMK(),falta=vaccs().filter(a=>!hasMeta(a,mk));
+  if(!falta.length||!dkeys().length){el.innerHTML='';return;}
+  const cur=falta.map(a=>D.config.accounts[a].cur).join(', ');
+  const pad=clampMeta(D.config.meta_pct!=null?D.config.meta_pct:10);
+  el.innerHTML='<div style="display:flex;align-items:center;gap:12px;background:rgba(0,200,255,.06);border:1px solid rgba(0,200,255,.28);border-radius:var(--r);padding:10px 14px;margin-bottom:12px"><span style="font-family:var(--mono);font-size:10px;color:var(--blue);flex:1">&#127919; Meta de '+mesNome(mk)+' ainda por definir ('+cur+') &mdash; a usar '+pad.toFixed(1)+'% por omiss&atilde;o.</span><button class="tbb" onclick="showTab(6)">Definir meta</button></div>';
+}
+// ══ BACKUP SEPARADO POR CONTA ══
+function accSubset(a){
+  const out={config:JSON.parse(JSON.stringify(D.config)),dias:{},compliance:JSON.parse(JSON.stringify(D.compliance||{})),metas:{}};
+  ACCS.forEach(x=>{if(x!==a&&out.config.accounts[x])out.config.accounts[x].active=false;});
+  Object.keys(D.metas||{}).forEach(mk=>{if(D.metas[mk]&&D.metas[mk][a]!=null){out.metas[mk]={};out.metas[mk][a]=D.metas[mk][a];}});
+  dkeys().forEach(k=>{
+    const s=D.dias[k],o={};let any=false;
+    ['cap_','caixa_','realiz_','regime_','aloc_','risco_','pos_','nota_','diario_'].forEach(pre=>{if(s[pre+a]!==undefined){o[pre+a]=s[pre+a];any=true;}});
+    o.nota=s.nota||'';o.diario=s.diario||'';
+    o.trades=(s.trades||[]).filter(t=>t.acc===a);
+    o.eventos=(s.eventos||[]).filter(e=>e.acc===a);
+    if(any||o.trades.length||o.eventos.length)out.dias[k]=o;
+  });
+  return out;
+}
+function exportAccJSON(a){
+  const ac=D.config.accounts[a]||{},nm=(D.config.fund_name||'ctm').toLowerCase().replace(/\s+/g,'-');
+  const b=new Blob([JSON.stringify(accSubset(a),null,2)],{type:'application/json'});
+  const u=URL.createObjectURL(b),el=document.createElement('a');
+  el.href=u;el.download=nm+'_'+(ac.cur||a)+'_'+today()+'.json';el.click();URL.revokeObjectURL(u);
+  D.config.last_backup=today();save();checkBackup();
+  showToast('💾 Backup da conta '+(ac.cur||a)+' exportado');
+}
+function exportAccExcel(a){
+  const prev=selAcc;selAcc=a;
+  try{exportExcel();}finally{selAcc=prev;}
+}
+function renderAccExports(){
+  const el=$('acc-exports');if(!el)return;
+  const act=aaccs();
+  el.innerHTML=act.length?act.map(a=>{const ac=D.config.accounts[a];
+    return '<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 14px;border-bottom:1px solid var(--border)">'
+      +'<span style="font-family:var(--mono);font-size:10px;color:var(--text2)"><span style="color:'+ACOL[a]+'">&#9679;</span> '+ac.cur+' &middot; '+(ac.broker||'Conta '+a.toUpperCase())+'</span>'
+      +'<span style="display:flex;gap:6px"><button class="btn btn-s btn-sm" onclick="exportAccJSON(\''+a+'\')">JSON</button><button class="btn btn-s btn-sm" onclick="exportAccExcel(\''+a+'\')">Excel</button></span></div>';
+  }).join(''):'<div style="font-family:var(--mono);font-size:10px;color:var(--text3);padding:10px 14px;text-align:center">Sem contas activas.</div>';
+}
+// ══════════════════════════════════════════════════════════════
+// ABA CHECKLIST — regras próprias, adesão e impacto no resultado
+// ══════════════════════════════════════════════════════════════
+function ruleKey(){return 'r'+Date.now().toString(36)+Math.floor(Math.random()*1e3).toString(36);}
+function addRule(){
+  const rs=allRules().slice();
+  rs.push({k:ruleKey(),l:'Nova regra',on:true});
+  D.config.checklist=rs;save();renderChecklist();renderCompForm();
+  setTimeout(()=>{const el=$('rl-'+rs[rs.length-1].k);if(el){el.focus();el.select();}},60);
+}
+function updRule(k,v){
+  const rs=allRules().slice(),i=rs.findIndex(r=>r.k===k);
+  if(i<0)return;rs[i]=Object.assign({},rs[i],{l:v});
+  D.config.checklist=rs;save();renderCompForm();
+}
+function toggleRule(k){
+  const rs=allRules().slice(),i=rs.findIndex(r=>r.k===k);
+  if(i<0)return;rs[i]=Object.assign({},rs[i],{on:rs[i].on===false});
+  D.config.checklist=rs;save();renderChecklist();renderCompForm();
+}
+function delRule(k){
+  const rs=allRules(),r=rs.find(x=>x.k===k);
+  if(!r)return;
+  if(!confirm('Remover a regra "'+r.l+'"?\n\nO histórico já registado não é apagado, mas a regra deixa de aparecer.'))return;
+  D.config.checklist=rs.filter(x=>x.k!==k);save();renderChecklist();renderCompForm();
+}
+function moveRule(k,dir){
+  const rs=allRules().slice(),i=rs.findIndex(r=>r.k===k),j=i+dir;
+  if(i<0||j<0||j>=rs.length)return;
+  const t=rs[i];rs[i]=rs[j];rs[j]=t;
+  D.config.checklist=rs;save();renderChecklist();renderCompForm();
+}
+// dias com checklist efectivamente preenchido (para não contar dias em branco)
+function ckDays(accs){
+  return dkeys().filter(d=>(accs||vaccs()).some(a=>compTouched(d,a)));
+}
+function ckAdesao(accs){
+  const av=accs||vaccs();let done=0,tot=0;
+  ckDays(av).forEach(d=>av.forEach(a=>{if(!compTouched(d,a))return;const s=compStats(d,a);done+=s.done;tot+=s.total;}));
+  return tot?done/tot*100:null;
+}
+function ckStreak(accs){
+  const av=accs||vaccs(),ds=ckDays(av);let n=0;
+  for(let i=ds.length-1;i>=0;i--){
+    const ok=av.every(a=>{const s=compStats(ds[i],a);return s.total>0&&s.done===s.total;});
+    if(ok)n++;else break;
+  }
+  return n;
+}
+function ckFails(accs){
+  const av=accs||vaccs(),rs=rules(),cut=dkeys().slice(-90),m={};
+  rs.forEach(r=>{m[r.k]={l:r.l,n:0};});
+  cut.forEach(d=>av.forEach(a=>{if(!compTouched(d,a))return;compStats(d,a).pend.forEach(r=>{if(m[r.k])m[r.k].n++;});}));
+  return Object.keys(m).map(k=>m[k]).filter(x=>x.n>0).sort((x,y)=>y.n-x.n);
+}
+function ckImpacto(){
+  return vaccs().map(a=>{
+    const comp=[],inc=[];
+    dkeys().forEach(d=>{
+      if(!compTouched(d,a))return;
+      const s=compStats(d,a);if(!s.total)return;
+      (s.done===s.total?comp:inc).push(+(D.dias[d]['realiz_'+a]||0));
+    });
+    const avg=arr=>arr.length?arr.reduce((s,v)=>s+v,0)/arr.length:null;
+    return {acc:a,nC:comp.length,nI:inc.length,mC:avg(comp),mI:avg(inc),
+            tC:comp.reduce((s,v)=>s+v,0),tI:inc.reduce((s,v)=>s+v,0)};
+  });
+}
+function renderChecklist(){
+  const accs=vaccs(),rs=rules(),av=accs;
+  set('ck-sub','Disciplina diária por conta · '+(isAll()&&aaccs().length>1?'todas as contas':accName(accs[0]||''))+' · '+rs.length+' regras activas');
+
+  // ── KPIs ──
+  const ad=ckAdesao(av),st=ckStreak(av),ds=ckDays(av);
+  const incompletos=ds.filter(d=>!av.every(a=>{const s=compStats(d,a);return s.total>0&&s.done===s.total;})).length;
+  const hoje=av.map(a=>compStats(today(),a)),hD=hoje.reduce((s,x)=>s+x.done,0),hT=hoje.reduce((s,x)=>s+x.total,0);
+  setH('ck-kpi','<div class="krow" style="grid-template-columns:repeat(5,1fr);margin-bottom:12px">'
+    +'<div class="kcell"><div class="klbl">Hoje</div><div class="kval '+(hT&&hD===hT?'g':'y')+'">'+hD+'/'+hT+'</div><div class="ksub">'+(hT&&hD===hT?'completo':'por fechar')+'</div></div>'
+    +'<div class="kcell"><div class="klbl">Adesão global</div><div class="kval '+(ad==null?'':(ad>=90?'g':ad>=70?'y':'r'))+'">'+(ad==null?'—':ad.toFixed(0)+'%')+'</div><div class="ksub">'+ds.length+' sessões</div></div>'
+    +'<div class="kcell"><div class="klbl">Streak</div><div class="kval b">'+st+'</div><div class="ksub">dias completos seguidos</div></div>'
+    +'<div class="kcell"><div class="klbl">Dias incompletos</div><div class="kval '+(incompletos?'r':'g')+'">'+incompletos+'</div><div class="ksub">de '+ds.length+'</div></div>'
+    +'<div class="kcell"><div class="klbl">Regras activas</div><div class="kval y">'+rs.length+'</div><div class="ksub">de '+allRules().length+' definidas</div></div>'
+    +'</div>');
+
+  // ── editor de regras ──
+  const all=allRules();
+  setH('ck-rules',all.length?all.map((r,i)=>{
+    const off=r.on===false;
+    return '<div class="rrow">'
+      +'<div class="chkb'+(off?'':' on')+'" onclick="toggleRule(\''+r.k+'\')" title="'+(off?'Activar':'Desactivar')+'">'+(off?'':'✓')+'</div>'
+      +'<input class="ri" id="rl-'+r.k+'" value="'+esc(r.l)+'" oninput="updRule(\''+r.k+'\',this.value)"'+(off?' style="opacity:.45"':'')+'>'
+      +'<button class="rdel" onclick="moveRule(\''+r.k+'\',-1)" title="Subir"'+(i===0?' disabled style="opacity:.2"':'')+'>&#9650;</button>'
+      +'<button class="rdel" onclick="moveRule(\''+r.k+'\',1)" title="Descer"'+(i===all.length-1?' disabled style="opacity:.2"':'')+'>&#9660;</button>'
+      +'<button class="rdel" onclick="delRule(\''+r.k+'\')" title="Remover">&#10005;</button>'
+      +'</div>';
+  }).join(''):'<div style="font-family:var(--mono);font-size:10px;color:var(--text3);padding:16px;text-align:center">Sem regras. Carregue em <b>+ Regra</b>.</div>');
+
+  // ── gráfico: regras mais falhadas ──
+  dC('ck-fail');
+  const fails=ckFails(av);
+  if(fails.length&&$('c-ck-fail')){
+    CH['ck-fail']=new Chart($('c-ck-fail').getContext('2d'),{type:'bar',data:{
+      labels:fails.map(f=>f.l.length>26?f.l.slice(0,24)+'…':f.l),
+      datasets:[{label:'Vezes por fechar',data:fails.map(f=>f.n),backgroundColor:'rgba(255,159,67,.55)',borderColor:'#ff9f43',borderWidth:1.5,borderRadius:3}]},
+      options:Object.assign({},COPT,{indexAxis:'y',plugins:{legend:{display:false}}})});
+  }
+
+  // ── impacto no resultado ──
+  const imp=ckImpacto();
+  const temDados=imp.some(x=>x.nC>0&&x.nI>0);
+  set('ck-imp-sub',temDados?'média de resultado por sessão':'ainda sem dados suficientes');
+  setH('ck-impacto',imp.length?'<div class="twrap"><table><thead><tr><th>Conta</th><th>Sessões completas</th><th>Média</th><th>Sessões incompletas</th><th>Média</th><th>Diferença</th></tr></thead><tbody>'
+    +imp.map(x=>{
+      const ac=D.config.accounts[x.acc],dif=(x.mC!=null&&x.mI!=null)?x.mC-x.mI:null;
+      return '<tr><td class="bd" style="color:'+ACOL[x.acc]+'">'+esc(ac.cur)+'</td>'
+        +'<td>'+x.nC+'</td><td class="'+(x.mC>=0?'g':'r')+'">'+(x.mC==null?'—':fC(x.mC,ac.cur))+'</td>'
+        +'<td>'+x.nI+'</td><td class="'+(x.mI>=0?'g':'r')+'">'+(x.mI==null?'—':fC(x.mI,ac.cur))+'</td>'
+        +'<td class="'+(dif==null?'dm':(dif>=0?'g':'r'))+'">'+(dif==null?'—':(dif>=0?'+':'')+fC(dif,ac.cur))+'</td></tr>';
+    }).join('')+'</tbody></table></div>'
+    +(temDados?'<div style="font-family:var(--mono);font-size:9px;color:var(--text3);line-height:1.65;padding:9px 14px">Diferença positiva = as sessões em que fechou o checklist renderam mais. Com poucas sessões o número ainda é ruído — leia-o como tendência, não como prova.</div>'
+              :'<div style="font-family:var(--mono);font-size:9px;color:var(--text3);padding:9px 14px">Precisa de sessões dos dois tipos (completas e incompletas) para a comparação fazer sentido.</div>')
+    :'');
+
+  // ── histórico ──
+  const hist=ckDays(av).slice(-60).reverse();
+  setH('ck-hist-th','<tr><th>Data</th>'+av.map(a=>'<th>'+esc(D.config.accounts[a].cur)+'</th>').join('')+'<th>Estado</th></tr>');
+  set('ck-hist-cnt',hist.length?hist.length+' sessões':'—');
+  setH('ck-hist-tb',hist.length?hist.map(d=>{
+    const cells=av.map(a=>{const s=compStats(d,a);
+      if(!compTouched(d,a))return '<td class="dm">—</td>';
+      return '<td class="'+(s.done===s.total?'g':'y')+'">'+s.done+'/'+s.total+'</td>';}).join('');
+    const ok=av.every(a=>{const s=compStats(d,a);return s.total>0&&s.done===s.total;});
+    return '<tr><td class="bd">'+fmtD(d)+'</td>'+cells+'<td><span class="dayflag '+(ok?'ok':'no')+'">'+(ok?'✓ completo':'⚠ incompleto')+'</span></td></tr>';
+  }).join(''):'<tr><td colspan="'+(av.length+2)+'" style="text-align:center;color:var(--text3)">Sem sessões com checklist preenchido.</td></tr>');
+}
+
+// ══ VERIFICAÇÃO DE VERSÃO ══
+// Lê version.json ao lado do HTML. Se houver versão mais recente publicada,
+// avisa o membro em vez de o deixar preso a uma cópia em cache do browser.
+function verCmp(a,b){
+  const pa=String(a).split(/[.\-]/).map(Number),pb=String(b).split(/[.\-]/).map(Number);
+  for(let i=0;i<Math.max(pa.length,pb.length);i++){
+    const x=pa[i]||0,y=pb[i]||0;
+    if(isNaN(x)||isNaN(y))return 0;
+    if(x!==y)return x>y?1:-1;
+  }
+  return 0;
+}
+function recarregar(){
+  try{const u=new URL(location.href);u.searchParams.set('v',Date.now());location.replace(u.toString());}
+  catch(e){location.reload();}
+}
+function showVerBanner(v,notas){
+  const el=$('ver-banner');if(!el)return;
+  el.innerHTML='<div style="display:flex;align-items:center;gap:12px;background:rgba(61,255,176,.07);border:1px solid rgba(61,255,176,.32);border-radius:var(--r);padding:10px 14px;margin-bottom:12px">'
+    +'<span style="font-family:var(--mono);font-size:10px;color:var(--green);flex:1">&#8593; Nova vers&atilde;o dispon&iacute;vel (v'+esc(v)+')'
+    +(notas?' &mdash; '+esc(notas):'')+'. Os seus dados n&atilde;o se perdem ao recarregar.</span>'
+    +'<button class="tbb acc btn-sm" onclick="recarregar()">Recarregar</button></div>';
+}
+function checkVersion(){
+  try{
+    if(location.protocol==='file:')return;          // sem servidor não há nada para verificar
+    if(typeof fetch!=='function')return;            // ambiente sem fetch: ignorar em silêncio
+    fetch('version.json?t='+Date.now(),{cache:'no-store'})
+      .then(r=>r&&r.ok?r.json():null)
+      .then(j=>{ if(j&&j.version&&verCmp(j.version,APP_VER)>0)showVerBanner(j.version,j.notas||''); })
+      .catch(()=>{});                                // offline ou ficheiro ausente: silêncio
+  }catch(e){}                                        // nunca pode travar o arranque
+}
+// ══ GOVERNANÇA ══
+function renderGov(){
+  const accs=vaccs();const evts=[];dkeys().forEach(d=>{(D.dias[d].eventos||[]).forEach(e=>{if(accs.indexOf(e.acc)>=0)evts.push({data:d,...e});});});
+  const ent=evts.filter(e=>e.tipo==='entrada'),sai=evts.filter(e=>e.tipo==='saída'||e.tipo==='saida'),apo=evts.filter(e=>e.tipo==='aporte');
+  const cD=dkeys().filter(d=>accs.some(a=>compTouched(d,a)));
+  const trades=getAllTrades();
+  setH('g-kpi',`<div class="kcell"><div class="klbl">Total Decisões</div><div class="kval">${evts.length}</div></div><div class="kcell"><div class="klbl">Entradas</div><div class="kval g">${ent.length}</div></div><div class="kcell"><div class="klbl">Saídas</div><div class="kval r">${sai.length}</div></div><div class="kcell"><div class="klbl">Aportes</div><div class="kval b">${apo.length}</div></div><div class="kcell"><div class="klbl">Compliance</div><div class="kval y">${cD.length}</div></div><div class="kcell"><div class="klbl">Win Rate</div><div class="kval g">${trades.length?(trades.filter(t=>(+(t.resultado||0))>0).length/trades.length*100).toFixed(1)+'%':'—'}</div></div>`);
+  $('g-kpi').style.gridTemplateColumns='repeat(6,1fr)';
+  const tl=$('g-tl');if(tl)tl.innerHTML=evts.length?[...evts].reverse().slice(0,30).map(e=>{const ac=D.config.accounts[e.acc];return`<div style="display:flex;gap:8px;padding:6px 13px;border-bottom:1px solid var(--border)"><span style="font-family:var(--mono);font-size:8px;color:var(--text3);min-width:65px">${fmtD(e.data)}</span><span class="badge b${e.tipo==='aporte'?'b':e.tipo==='saída'||e.tipo==='saida'?'r':'g'}" style="min-width:55px;justify-content:center">${e.tipo}</span><span style="font-family:var(--mono);font-size:10px;color:var(--text2)">${e.nota||e.activo||'—'}${ac?' ('+ac.cur+')':''}</span></div>`;}).join(''):`<div style="text-align:center;padding:20px;color:var(--text3);font-family:var(--mono);font-size:10px">—</div>`;
+  const clrs=['#3dffb0','#00c8ff','#ffd166','#ff9f43','#a78bfa'];
+  ['g-ent','g-sai'].forEach(id=>dC(id));
+  const eM={},sM={};ent.forEach(e=>{eM[e.mkt||'Outro']=(eM[e.mkt||'Outro']||0)+1;});sai.forEach(e=>{sM[e.mkt||'Outro']=(sM[e.mkt||'Outro']||0)+1;});
+  if(Object.keys(eM).length){const ctx=$('c-g-ent')?.getContext('2d');if(ctx)CH['g-ent']=new Chart(ctx,{type:'doughnut',data:{labels:Object.keys(eM),datasets:[{data:Object.values(eM),backgroundColor:clrs,borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,cutout:'50%',plugins:{legend:{labels:{color:'#7a9ab5',font:{size:8}}}}}});}
+  if(Object.keys(sM).length){const ctx=$('c-g-sai')?.getContext('2d');if(ctx)CH['g-sai']=new Chart(ctx,{type:'doughnut',data:{labels:Object.keys(sM),datasets:[{data:Object.values(sM),backgroundColor:clrs,borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,cutout:'50%',plugins:{legend:{labels:{color:'#7a9ab5',font:{size:8}}}}}});}
+  const tdk=today(),rs=rules();
+  const gchk=$('g-chk');
+  if(gchk)gchk.innerHTML=accs.length?accs.map(a=>{
+    const ac=D.config.accounts[a],st=compStats(tdk,a),cc=compOf(tdk,a);
+    return '<div class="ckhead"><span style="font-family:var(--mono);font-size:10px;color:'+ACOL[a]+'">'+esc(ac.cur)+'</span><span class="ckcnt '+(st.done===st.total?'ok':'no')+'">'+st.done+'/'+st.total+'</span></div>'
+      +'<div style="padding:0 13px 10px">'+rs.map(i=>'<div class="chki"><div class="chkb '+(cc[i.k]?'on':'')+'" onclick="toggleCmp(\''+tdk+'\',\''+a+'\',\''+i.k+'\',this)">'+(cc[i.k]?'✓':'')+'</div><span class="chkt">'+esc(i.l)+'</span></div>').join('')+'</div>';
+  }).join(''):'';
+  const notas=$('g-notas');if(notas)notas.innerHTML=[...dkeys()].reverse().filter(d=>D.dias[d].diario).map(d=>`<div style="border:1px solid var(--border);border-radius:var(--rsm);padding:9px;background:var(--bg3)"><div style="font-family:var(--mono);font-size:8px;color:var(--blue);margin-bottom:4px">${fmtD(d)}</div><div style="font-family:var(--mono);font-size:10px;color:var(--text2);line-height:1.5">${D.dias[d].diario}</div></div>`).join('')|| `<div style="text-align:center;padding:20px;color:var(--text3);font-family:var(--mono);font-size:10px">—</div>`;
+}
+function toggleCmp(date,acc,key,el){
+  setComp(date,acc,key,!compOf(date,acc)[key]);
+  el.classList.toggle('on');el.innerHTML=el.classList.contains('on')?'✓':'';
+  save();if(activeTab===9)renderChecklist();
+}
+// ══ TRADES ══
+let trF='all';
+function filterTr(f,btn){trF=f;document.querySelectorAll('#tr-flt-btns .pflt').forEach(b=>b.classList.remove('active'));if(btn)btn.classList.add('active');renderTrades();}
+function renderTrades(){
+  const trades=getAllTrades();let rows=trades;
+  if(trF==='win')rows=trades.filter(t=>(+(t.resultado||0))>0);
+  if(trF==='loss')rows=trades.filter(t=>(+(t.resultado||0))<0);
+  const pnl=trades.reduce((s,t)=>s+(+(t.resultado||0)),0);
+  const wr=trades.length?(trades.filter(t=>(+(t.resultado||0))>0).length/trades.length*100).toFixed(1)+'%':'—';
+  const avgR=trades.length?(trades.reduce((s,t)=>s+(+t.rating||0),0)/trades.length).toFixed(1):'—';
+  const best=trades.reduce((b,t)=>(+(t.resultado_pct||0))>(+(b.resultado_pct||0))?t:b,{resultado_pct:0,activo:'—'});
+  setH('tr-kpi',`<div class="krow" style="grid-template-columns:repeat(6,1fr);margin-bottom:12px"><div class="kcell"><div class="klbl">Total Trades</div><div class="kval">${trades.length}</div></div><div class="kcell"><div class="klbl">Win Rate</div><div class="kval g">${wr}</div></div><div class="kcell"><div class="klbl">Rating Médio</div><div class="kval y">${avgR}</div></div><div class="kcell"><div class="klbl">P&L Total</div><div class="kval ${pnl>=0?'g':'r'}">${fC(pnl,'EUR')}</div></div><div class="kcell"><div class="klbl">Melhor Trade</div><div class="kval g">${best.activo||'—'}</div></div><div class="kcell"><div class="klbl">Melhor %</div><div class="kval g">${fP(best.resultado_pct)}</div></div></div>`);
+  dC('tr-eq');dC('tr-bar');
+  if(trades.length){let cum=0;const cumD=trades.map(t=>{cum+=(+(t.resultado||0));return cum;});const ctx1=$('c-tr-eq')?.getContext('2d');if(ctx1){const g=ctx1.createLinearGradient(0,0,0,170);g.addColorStop(0,'rgba(61,255,176,.2)');g.addColorStop(1,'rgba(61,255,176,0)');CH['tr-eq']=new Chart(ctx1,{type:'line',data:{labels:trades.map((_,i)=>'T'+(i+1)),datasets:[{label:'P&L Cum.',data:cumD,borderColor:'#3dffb0',backgroundColor:g,borderWidth:2,pointRadius:0,tension:.4}]},options:{...COPT,plugins:{...COPT.plugins,legend:{display:false}}}});}const ctx2=$('c-tr-bar')?.getContext('2d');if(ctx2)CH['tr-bar']=new Chart(ctx2,{type:'bar',data:{labels:trades.map((_,i)=>'T'+(i+1)),datasets:[{data:trades.map(t=>+(t.resultado||0)),backgroundColor:trades.map(t=>(+(t.resultado||0))>=0?'rgba(61,255,176,.7)':'rgba(255,77,77,.7)'),borderRadius:2}]},options:{...COPT,plugins:{...COPT.plugins,legend:{display:false}}}});}
+  const tb=$('tb-trades');if(tb)tb.innerHTML=rows.length?[...rows].reverse().map(t=>{const ac=D.config.accounts[t.acc],r=+(t.resultado||0),rp=+(t.resultado_pct||0);return`<tr><td class="dm">${fmtD(t.data)}</td><td class="bd">${t.activo||'—'}</td><td class="dm">${t.setup||'—'}</td><td class="${rp>=0?'g':'r'}">${fP(rp)}</td><td class="${r>=0?'g':'r'}">${fC(r,ac?.cur)}</td><td>${stH(+t.rating||0)}</td><td class="${ACLS[t.acc]}">${ac?.cur||'—'}</td><td class="dm">${t.nota_saida||'—'}</td></tr>`;}).join(''):`<tr><td colspan="8" style="text-align:center;color:var(--text3)">—</td></tr>`;
+}
+// ══ DAILY LOG ══
+let posF={a:[],b:[],c:[]},tradesF=[],eventsF=[];
+function buildDailyForms(){
+  const accs=vaccs();
+  let pSec='';
+  accs.forEach(a=>{
+    const ac=D.config.accounts[a];
+    pSec+=`<div class="lsec"><div class="lshead"><div class="lstitle">📈 Posições — Conta ${ac.cur} · ${ac.broker||'Conta '+a.toUpperCase()}</div><button class="btn btn-s btn-sm" onclick="addPos('${a}')">+ Adicionar</button></div><div class="lsbody"><div class="twrap"><table class="ptbl"><thead><tr><th>Activo</th><th>Mkt</th><th>Lucro%</th><th>Lucro</th><th>Volume</th><th>Valor</th><th>Actual</th><th>Abertura</th><th>Trust</th><th>ΔD-1</th><th></th></tr></thead><tbody id="pos-body-${a}"></tbody><tfoot><tr><td colspan="2" style="font-size:8px;color:var(--text3);letter-spacing:1px">LUCRO TOTAL</td><td colspan="2"><span id="pos-tot-${a}" style="color:var(--green);font-weight:600;font-family:var(--mono);font-size:11px">0.00</span></td><td colspan="7"></td></tr></tfoot></table></div></div></div>`;
+  });
+  setH('pos-sections',pSec);
+  let sf=`<div style="display:grid;grid-template-columns:repeat(${Math.min(4,accs.length*2)},1fr);gap:10px;margin-bottom:10px">`;
+  accs.forEach(a=>{const ac=D.config.accounts[a];sf+=`<div class="fg"><label class="fl">Capital ${ac.cur} (saldo)</label><input class="fi" type="number" id="day-cap-${a}" placeholder="0.00" oninput="liveCalc()"></div><div class="fg"><label class="fl">Caixa ${ac.cur}</label><input class="fi" type="number" id="day-caixa-${a}" placeholder="0.00"></div>`;});
+  sf+='</div>';
+  sf+=`<div style="display:grid;grid-template-columns:repeat(${Math.min(4,accs.length*3)},1fr);gap:10px">`;
+  accs.forEach(a=>{const ac=D.config.accounts[a];sf+=`<div class="fg"><label class="fl">Realizado ${ac.cur}</label><input class="fi" type="number" id="day-realiz-${a}" placeholder="0.00" oninput="liveCalc()"></div><div class="fg"><label class="fl">Regime ${ac.cur}</label><select class="fs" id="day-regime-${a}"><option>DORO</option><option>MIX</option><option>CONSERVADOR</option><option>AGRESSIVO</option></select></div><div class="fg"><label class="fl">Aloc% / Risco%</label><div style="display:flex;gap:6px"><input class="fi" type="number" id="day-aloc-${a}" placeholder="Aloc" style="font-size:10px"><input class="fi" type="number" id="day-risco-${a}" placeholder="Risco" style="font-size:10px"></div></div>`;});
+  sf+='</div>';
+  setH('sess-fields',sf);
+  let pp='';accs.forEach(a=>{const ac=D.config.accounts[a];pp+=`<div><div class="fl" style="margin-bottom:3px">P&L ${ac.cur}</div><div style="font-family:var(--mono);font-size:15px;font-weight:600" id="prev-pnl-${a}">—</div></div>`;});
+  setH('prev-pnls',pp);
+  accs.forEach(a=>{if(!posF[a])posF[a]=[];renderPosForm(a);});
+  renderTradesForm();renderEventsForm();
+}
+function clearDayForm(){
+  loadedDay=null;dirty=false;
+  setV('day-date',today());setV('day-nota','');setV('day-diario','');
+  posF={a:[],b:[],c:[]};tradesF=[];eventsF=[];
+  vaccs().forEach(a=>{setV('day-cap-'+a,'');setV('day-caixa-'+a,'');setV('day-realiz-'+a,'');});
+  vaccs().forEach(a=>renderPosForm(a));renderTradesForm();renderEventsForm();liveCalc();
+  setV('load-day-sel','');
+}
+function loadDay(date){
+  if(!date)return;const d=D.dias[date];if(!d)return;
+  loadedDay=date;
+  setV('day-date',date);
+  const accs=vaccs(),a0=accs[0];
+  if(isAll()&&aaccs().length>1){setV('day-nota',d.nota||'');setV('day-diario',d.diario||'');}
+  else{setV('day-nota',(a0&&d['nota_'+a0]!=null?d['nota_'+a0]:d.nota)||'');setV('day-diario',(a0&&d['diario_'+a0]!=null?d['diario_'+a0]:d.diario)||'');}
+  accs.forEach(a=>{setV('day-cap-'+a,d['cap_'+a]||'');setV('day-caixa-'+a,d['caixa_'+a]||'');setV('day-realiz-'+a,d['realiz_'+a]||'');setV('day-regime-'+a,d['regime_'+a]||'DORO');setV('day-aloc-'+a,d['aloc_'+a]||'');setV('day-risco-'+a,d['risco_'+a]||'');posF[a]=JSON.parse(JSON.stringify(d['pos_'+a]||[]));renderPosForm(a);});
+  tradesF=JSON.parse(JSON.stringify((d.trades||[]).filter(t=>accs.indexOf(t.acc)>=0)));
+  eventsF=JSON.parse(JSON.stringify((d.eventos||[]).filter(e=>accs.indexOf(e.acc)>=0)));
+  renderTradesForm();renderEventsForm();liveCalc();
+}
+// POS FORM
+function addPos(a){posF[a]=posF[a]||[];posF[a].push({activo:'',mkt:'Forex',lucro_pct:0,lucro:0,volume:0,valor:0,preco_atual:0,preco_ab:0,trust:80,delta_d1:0});renderPosForm(a);}
+function remPos(a,i){posF[a].splice(i,1);renderPosForm(a);}
+function updPos(a,i,f,v){if(!posF[a])posF[a]=[];posF[a][i][f]=v;if(f==='lucro')calcPosTotal(a);}
+function calcPosTotal(a){const ac=D.config.accounts[a],t=(posF[a]||[]).reduce((s,p)=>s+(+(p.lucro||0)),0);const el=$('pos-tot-'+a);if(el){el.textContent=fC(t,ac.cur);el.style.color=t>=0?'var(--green)':'var(--red)';}}
+function renderPosForm(a){
+  const tb=$('pos-body-'+a);if(!tb)return;
+  const ac=D.config.accounts[a];const mkts=['Forex','Índices','Commodities','Crypto','Acções','Obrigações'];
+  tb.innerHTML='';
+  (posF[a]||[]).forEach((p,i)=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td><input value="${p.activo||''}" placeholder="EURUSD" oninput="updPos('${a}',${i},'activo',this.value)" style="width:70px"></td><td><select style="background:transparent;border:none;color:var(--text2);font-family:var(--mono);font-size:10px;width:80px" onchange="updPos('${a}',${i},'mkt',this.value)">${mkts.map(m=>`<option value="${m}" ${p.mkt===m?'selected':''} >${m}</option>`).join('')}</select></td><td><input type="number" value="${p.lucro_pct||''}" placeholder="0" oninput="updPos('${a}',${i},'lucro_pct',this.value)" style="width:55px"></td><td><input type="number" value="${p.lucro||''}" placeholder="0" oninput="updPos('${a}',${i},'lucro',this.value)" style="width:65px"></td><td><input type="number" value="${p.volume||''}" placeholder="0" oninput="updPos('${a}',${i},'volume',this.value)" style="width:50px"></td><td><input type="number" value="${p.valor||''}" placeholder="0" oninput="updPos('${a}',${i},'valor',this.value)" style="width:65px"></td><td><input type="number" value="${p.preco_atual||''}" placeholder="0" oninput="updPos('${a}',${i},'preco_atual',this.value)" style="width:65px"></td><td><input type="number" value="${p.preco_ab||''}" placeholder="0" oninput="updPos('${a}',${i},'preco_ab',this.value)" style="width:65px"></td><td><input type="number" value="${p.trust||''}" placeholder="80" min="0" max="100" oninput="updPos('${a}',${i},'trust',this.value)" style="width:45px"></td><td><input type="number" value="${p.delta_d1||''}" placeholder="0" oninput="updPos('${a}',${i},'delta_d1',this.value)" style="width:55px"></td><td><button class="btn btn-d btn-sm" onclick="remPos('${a}',${i})">✕</button></td>`;
+    tb.appendChild(tr);
+  });calcPosTotal(a);
+}
+function liveCalc(){
+  const accs=vaccs(),c=D.config;let aum=0;
+  accs.forEach(a=>{const ac=D.config.accounts[a],s=+(getV('day-cap-'+a)||0),r=+(getV('day-realiz-'+a)||0);aum+=s*(+ac.fx||1);const el=$('prev-pnl-'+a);if(el){el.textContent=fC(r,ac.cur);el.style.color=r>=0?'var(--green)':'var(--red)';}});
+  const pa=$('prev-aum');if(pa)pa.textContent='≈ '+fC(aum,'EUR');
+  const a0=accs[0];if(!a0)return;const _mk=(getV('day-date')||today()).slice(0,7);const ac0=D.config.accounts[a0],r0=+(getV('day-realiz-'+a0)||0),mV=metaVal(a0,_mk);
+  const pm=$('prev-meta');if(pm){pm.textContent=mV?`${(r0/mV*100).toFixed(0)}% de ${fC(mV,ac0.cur)}`:'—';pm.style.color=r0>=mV?'var(--green)':'var(--text2)';}
+}
+// TRADES FORM
+function addTrade(){tradesF.push({activo:'',mkt:'Forex',resultado:0,resultado_pct:0,setup:'',nota_entrada:'',nota_saida:'',rating:0,acc:vaccs()[0]||'a'});renderTradesForm();}
+function remTrade(i){tradesF.splice(i,1);renderTradesForm();}
+function updTrade(i,f,v){tradesF[i][f]=v;if(f==='resultado_pct'){tradesF[i].rating=cRat(v);renderTradesForm();}}
+function renderTradesForm(){
+  const c=$('trades-cont');if(!c)return;
+  if(!tradesF.length){c.innerHTML='<div style="color:var(--text3);font-family:var(--mono);font-size:10px;text-align:center;padding:14px">Sem trades registados.</div>';return;}
+  c.innerHTML='';const accs=vaccs();
+  tradesF.forEach((t,i)=>{
+    const d=document.createElement('div');d.className='trow';
+    d.innerHTML=`<div class="tg4"><div class="fg"><label class="fl">Activo</label><input class="fi" value="${t.activo||''}" placeholder="EURUSD" oninput="updTrade(${i},'activo',this.value)"></div><div class="fg"><label class="fl">Mercado</label><select class="fs" onchange="updTrade(${i},'mkt',this.value)">${['Forex','Índices','Commodities','Crypto','Acções','Obrigações'].map(m=>`<option ${t.mkt===m?'selected':''} >${m}</option>`).join('')}</select></div><div class="fg"><label class="fl">Resultado</label><input class="fi" type="number" value="${t.resultado||''}" placeholder="0.00" oninput="updTrade(${i},'resultado',this.value)"></div><div class="fg"><label class="fl">Resultado %</label><input class="fi" type="number" value="${t.resultado_pct||''}" placeholder="0.00" oninput="updTrade(${i},'resultado_pct',this.value)"></div></div><div class="tg3"><div class="fg"><label class="fl">Setup</label><input class="fi" value="${t.setup||''}" placeholder="BOS+FVG" oninput="updTrade(${i},'setup',this.value)"></div><div class="fg"><label class="fl">Nota Entrada</label><input class="fi" value="${t.nota_entrada||''}" placeholder="..." oninput="updTrade(${i},'nota_entrada',this.value)"></div><div class="fg"><label class="fl">Nota Saída</label><input class="fi" value="${t.nota_saida||''}" placeholder="..." oninput="updTrade(${i},'nota_saida',this.value)"></div></div><div class="tfoot2"><div style="display:flex;align-items:center;gap:10px"><div class="fg" style="flex-direction:row;align-items:center;gap:6px"><label class="fl">Conta</label><select class="fs" style="width:90px" onchange="updTrade(${i},'acc',this.value)">${accs.map(a=>`<option value="${a}" ${t.acc===a?'selected':''} >${D.config.accounts[a].cur}</option>`).join('')}</select></div><span style="font-family:var(--mono);font-size:8px;color:var(--text3)">RATING:</span>${stH(+t.rating||cRat(t.resultado_pct))}</div><button class="btn btn-d btn-sm" onclick="remTrade(${i})">✕ Remover</button></div>`;
+    c.appendChild(d);
+  });
+}
+// EVENTS FORM
+function addEvent(){eventsF.push({tipo:'entrada',acc:vaccs()[0]||'a',activo:'',mkt:'Forex',valor:0,nota:''});renderEventsForm();}
+function remEvent(i){eventsF.splice(i,1);renderEventsForm();}
+function updEvent(i,f,v){eventsF[i][f]=v;}
+function renderEventsForm(){
+  const c=$('events-cont');if(!c)return;
+  if(!eventsF.length){c.innerHTML='<div style="color:var(--text3);font-family:var(--mono);font-size:10px;text-align:center;padding:14px">Sem eventos registados.</div>';return;}
+  c.innerHTML='';const accs=vaccs();
+  eventsF.forEach((e,i)=>{
+    const d=document.createElement('div');d.className='evrow';
+    d.innerHTML=`<div class="fg"><label class="fl">Tipo</label><select class="fs" onchange="updEvent(${i},'tipo',this.value)">${['entrada','saída','aporte','depósito','levantamento','transferência','caixa','outros'].map(t=>`<option ${e.tipo===t?'selected':''} >${t}</option>`).join('')}</select></div><div class="fg"><label class="fl">Conta</label><select class="fs" onchange="updEvent(${i},'acc',this.value)">${accs.map(a=>`<option value="${a}" ${e.acc===a?'selected':''} >${D.config.accounts[a].cur}</option>`).join('')}</select></div><div class="fg"><label class="fl">Valor</label><input class="fi" type="number" value="${e.valor||''}" oninput="updEvent(${i},'valor',this.value)"></div><div class="fg"><label class="fl">Nota</label><input class="fi" value="${e.nota||''}" placeholder="..." oninput="updEvent(${i},'nota',this.value)"></div><button class="btn btn-d btn-sm" onclick="remEvent(${i})" style="align-self:flex-end">✕</button>`;
+    c.appendChild(d);
+  });
+}
+// COMPLIANCE FORM
+function renderCompForm(){
+  const c=$('comp-form');if(!c)return;
+  const dk=getV('day-date')||today(),accs=vaccs(),rs=rules();
+  if(!accs.length){c.innerHTML='<div style="font-family:var(--mono);font-size:10px;color:var(--text3);padding:14px;text-align:center">Active uma conta no Setup.</div>';return;}
+  if(!rs.length){c.innerHTML='<div style="font-family:var(--mono);font-size:10px;color:var(--text3);padding:14px;text-align:center">Sem regras — defina-as na aba Checklist.</div>';return;}
+  c.innerHTML=accs.map(a=>{
+    const ac=D.config.accounts[a],st=compStats(dk,a),cc=compOf(dk,a);
+    return '<div class="ckhead"><span style="font-family:var(--mono);font-size:10px;color:'+ACOL[a]+'">'+esc(ac.cur)+' · '+esc(ac.broker||'Conta '+a.toUpperCase())+'</span>'
+      +'<span class="ckcnt '+(st.done===st.total?'ok':'no')+'" id="ckc-'+a+'">'+st.done+'/'+st.total+'</span></div>'
+      +'<div style="display:grid;grid-template-columns:1fr 1fr;padding:0 2px">'
+      +rs.map(r=>'<div class="chki" style="padding:6px 14px"><div class="chkb '+(cc[r.k]?'on':'')+'" onclick="toggleCF(\''+a+'\',\''+r.k+'\',this)">'+(cc[r.k]?'✓':'')+'</div><span class="chkt">'+esc(r.l)+'</span></div>').join('')
+      +'</div>';
+  }).join('');
+}
+function toggleCF(a,k,el){
+  const dk=getV('day-date')||today();
+  setComp(dk,a,k,!compOf(dk,a)[k]);
+  el.classList.toggle('on');el.innerHTML=el.classList.contains('on')?'✓':'';
+  const st=compStats(dk,a),cnt=$('ckc-'+a);
+  if(cnt){cnt.textContent=st.done+'/'+st.total;cnt.className='ckcnt '+(st.done===st.total?'ok':'no');}
+  save();
+}
+// SAVE DAY
+function saveDay(){
+  const date=getV('day-date');if(!date){showToast('⚠️ Seleccione uma data!');return;}
+  if(date>today()&&!confirm('A data '+fmtD(date)+' está no futuro.\n\nGuardar mesmo assim?'))return;
+  const accs=vaccs(),todas=isAll()&&aaccs().length>1;
+  const escopo=todas?'todas as contas':accName(accs[0]||'');
+  if(D.dias[date]&&date!==loadedDay&&!confirm('Já existe uma sessão registada em '+fmtD(date)+'.\n\nSubstituir os dados de '+escopo+' nesse dia?\nAs restantes contas não são afectadas.'))return;
+  if(accs.length&&accs.every(a=>!(+getV('day-cap-'+a)))&&!confirm('Sem capital preenchido.\n\nEste dia não entra no NAV nem nas curvas de equity. Guardar assim?'))return;
+  const pend=pendentes(date,accs);
+  if(pend.length){
+    const txt=pend.map(x=>'▸ '+x.cur+' ('+x.itens.length+'): '+x.itens.join(', ')).join('\n\n');
+    if(!confirm('Checklist com pontos por fechar:\n\n'+txt+'\n\nGravar mesmo assim?\nO dia fica marcado como INCOMPLETO no histórico.'))return;
+  }
+  tradesF.forEach(t=>{t.rating=cRat(t.resultado_pct);});
+  const prev=D.dias[date]||{};
+  const dd=JSON.parse(JSON.stringify(prev));
+  dd.trades=(prev.trades||[]).filter(t=>accs.indexOf(t.acc)<0).concat(JSON.parse(JSON.stringify(tradesF)));
+  dd.eventos=(prev.eventos||[]).filter(e=>accs.indexOf(e.acc)<0).concat(JSON.parse(JSON.stringify(eventsF)));
+  if(todas){dd.nota=getV('day-nota');dd.diario=getV('day-diario');}
+  else if(accs[0]){dd['nota_'+accs[0]]=getV('day-nota');dd['diario_'+accs[0]]=getV('day-diario');}
+  accs.forEach(a=>{dd['cap_'+a]=+(getV('day-cap-'+a)||0);dd['caixa_'+a]=+(getV('day-caixa-'+a)||0);dd['realiz_'+a]=+(getV('day-realiz-'+a)||0);dd['regime_'+a]=getV('day-regime-'+a)||'DORO';dd['aloc_'+a]=+(getV('day-aloc-'+a)||0);dd['risco_'+a]=+(getV('day-risco-'+a)||0);dd['pos_'+a]=JSON.parse(JSON.stringify(posF[a]||[]));});
+  D.dias[date]=dd;save();loadedDay=date;selDay=date;refreshDaySel();renderAll();checkBackup();checkMetaBanner();
+  const ok=$('save-ok');if(ok){ok.textContent=(pend.length?'⚠️ ':'✅ ')+fmtD(date)+' · '+escopo+' guardada'+(pend.length?' · checklist incompleto':'');ok.style.opacity='1';setTimeout(()=>ok.style.opacity='0',4000);}
+  showToast('✅ Sessão '+fmtD(date)+' guardada!');
+}
+// ══ SETUP ══
+const togS={a:true,b:false,c:false};
+function toggleAcc(a){togS[a]=!togS[a];const el=$('ts-'+a);if(el)el.classList.toggle('on',togS[a]);}
+function prevSetup(){const nm=getV('cfg-name')||'CTM';const ini=nm.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,3)||'CTM';const sp=$('setup-logo-init');if(sp)sp.textContent=ini;}
+function loadCfgForm(){
+  const c=D.config;setV('cfg-name',c.fund_name);setV('cfg-owner',c.fund_owner);setV('cfg-start',c.start_date);setV('cfg-meta',c.meta_pct||10);
+  ACCS.forEach(a=>{const ac=c.accounts[a]||{};togS[a]=!!ac.active;const tEl=$('ts-'+a);if(tEl)tEl.classList.toggle('on',!!ac.active);setV('cfg-cur-'+a,ac.cur);setV('cfg-broker-'+a,ac.broker);setV('cfg-cap-'+a,ac.cap||'');setV('cfg-fx-'+a,ac.fx);});
+}
+function saveConfig(){
+  D.config.fund_name=getV('cfg-name');D.config.fund_owner=getV('cfg-owner');D.config.start_date=getV('cfg-start');D.config.meta_pct=clampMeta(getV('cfg-meta')||10);
+  ACCS.forEach(a=>{D.config.accounts[a]={active:togS[a],cur:getV('cfg-cur-'+a)||'EUR',broker:getV('cfg-broker-'+a),cap:+(getV('cfg-cap-'+a)||0),fx:+(getV('cfg-fx-'+a)||1)};});
+  save();buildDailyForms();renderAll();refreshDaySel();renderCompForm();
+  showToast('✅ Configuração guardada!');$('modal-ob').style.display='none';
+}
+// ══ SAVE/IMPORT/EXPORT ══
+let dirty=false;
+function save(){
+  try{localStorage.setItem('ctm_v3',JSON.stringify(D));dirty=false;snapshot();return true;}
+  catch(err){
+    console.error(err);
+    showToast('⚠️ Não foi possível guardar — memória do navegador cheia. Exporte o JSON já!');
+    return false;
+  }
+}
+document.addEventListener('input',e=>{const t=e.target;if(t&&t.closest&&t.closest('#panel-2'))dirty=true;});
+window.addEventListener('beforeunload',e=>{if(dirty){e.preventDefault();e.returnValue='';}});
+function exportJSON(){const nm=(D.config.fund_name||'ctm').toLowerCase().replace(/\s+/g,'-');const b=new Blob([JSON.stringify(D,null,2)],{type:'application/json'});const u=URL.createObjectURL(b);const a=document.createElement('a');a.href=u;a.download=nm+'_'+today()+'.json';a.click();URL.revokeObjectURL(u);D.config.last_backup=today();save();checkBackup();renderSnaps();showToast('💾 Backup exportado!');}
+function importJSON(input){
+  const f=input.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=e=>{
+    let novo;
+    try{novo=JSON.parse(e.target.result);}
+    catch(err){showToast('⚠️ Ficheiro ilegível — não é um backup válido');return;}
+    if(!novo||typeof novo!=='object'||(!novo.config&&!novo.dias)){showToast('⚠️ Este ficheiro não é um backup deste dashboard');return;}
+    const nDias=novo.dias?Object.keys(novo.dias).length:0, atuais=dkeys().length;
+    if(atuais&&!confirm('Importar vai SUBSTITUIR os dados actuais.\n\nActuais: '+atuais+' sessões\nFicheiro: '+nDias+' sessões\n\nContinuar?'))return;
+    D=novo;
+    migrate();                                  // indispensável ao actualizar de versão
+    if(aaccs().length===1)selAcc=aaccs()[0];
+    else if(selAcc!=='all'&&aaccs().indexOf(selAcc)<0)selAcc='all';
+    save();
+    loadCfgForm();buildDailyForms();
+    selDay=null;loadedDay=null;dirty=false;
+    refreshDaySel();renderCompForm();renderAll();
+    checkBackup();checkMetaBanner();renderSnaps();
+    showToast('📂 '+nDias+' sessões importadas');
+  };
+  r.readAsText(f);input.value='';
+}
+function exportExcel(){
+  const wb=XLSX.utils.book_new(),c=D.config,accs=vaccs();
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([['Fundo',c.fund_name],['Gestor',c.fund_owner],['Início',c.start_date],['Meta %',c.meta_pct],...accs.map(a=>['Capital '+D.config.accounts[a].cur,D.config.accounts[a].cap])]),['Config']);
+  const trades=getAllTrades();
+  if(trades.length)XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([['Data','Activo','Mkt','Setup','Resultado','%','Rating','Conta'],...trades.map(t=>[t.data,t.activo,t.mkt,t.setup,t.resultado,t.resultado_pct,t.rating,D.config.accounts[t.acc]?.cur])]),['Trades']);
+  const ds=dkeys();
+  if(ds.length)XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([['Data',...accs.flatMap(a=>['Cap '+D.config.accounts[a].cur,'Caixa '+D.config.accounts[a].cur,'Realiz '+D.config.accounts[a].cur]),'Nota'],...ds.map(d=>{const dy=D.dias[d];return[d,...accs.flatMap(a=>[dy['cap_'+a],dy['caixa_'+a],dy['realiz_'+a]]),dy.nota];})]),['Histórico']);
+  XLSX.writeFile(wb,(c.fund_name||'ctm').toLowerCase().replace(/\s+/g,'-')+'_'+today()+'.xlsx');
+  showToast('↓ Excel exportado!');
+}
+let _t;function showToast(m){const e=$('toast');e.textContent=m;e.classList.add('show');clearTimeout(_t);_t=setTimeout(()=>e.classList.remove('show'),3000);}
+</script>
+</body>
+</html>
+
+<script>
+/* Fallback: browsers antigos (sem optional chaining) mostram aviso em vez de ecra em branco. */
+try{ new Function("const o={};return o?.x"); }catch(e){
+  document.addEventListener('DOMContentLoaded',function(){
+    document.body.innerHTML='<div style="font-family:sans-serif;color:#e2eaf2;background:#060a0d;height:100vh;display:flex;align-items:center;justify-content:center;text-align:center;padding:40px"><div><h1 style="font-size:20px;margin-bottom:10px">Navegador desatualizado</h1><p style="color:#7a9ab5;font-size:13px;line-height:1.7;max-width:420px">Este dashboard precisa de um navegador de 2020 ou mais recente.<br>Abra em Chrome, Edge, Firefox ou Safari atualizados.</p></div></div>';
+  });
+}
+</script>
+</body>
+</html>
