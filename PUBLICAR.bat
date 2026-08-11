@@ -8,6 +8,8 @@ echo. >> "%LOG%"
 if not exist "index.html" goto semficheiro
 if not exist ".git" goto semrepo
 if exist ".git\index.lock" del /f ".git\index.lock"
+git config user.email "tatuzinho2011@proton.me" >> "%LOG%" 2>&1
+git config user.name "CAP1974" >> "%LOG%" 2>&1
 
 echo A carimbar a nova versao...
 powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0versao.ps1" >> "%LOG%" 2>&1

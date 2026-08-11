@@ -5,13 +5,15 @@ echo ---- CONFIGURACAO INICIAL DO REPOSITORIO ---- > "%LOG%"
 echo Data: %date% %time% >> "%LOG%"
 echo. >> "%LOG%"
 echo ANTES de correr isto, crie o repositorio no GitHub: >> "%LOG%"
-echo   github.com/new  ->  nome: ctm-socios  ->  Public  ->  Create >> "%LOG%"
+echo   github.com/new  ...  nome: ctm-socios  ...  Public  ...  Create >> "%LOG%"
 echo   (NAO marque "Add a README file") >> "%LOG%"
 echo. >> "%LOG%"
 
 if exist ".git" goto jaexiste
 
 git init >> "%LOG%" 2>&1
+git config user.email "tatuzinho2011@proton.me" >> "%LOG%" 2>&1
+git config user.name "CAP1974" >> "%LOG%" 2>&1
 git branch -M main >> "%LOG%" 2>&1
 git remote add origin https://github.com/CAP1974/ctm-socios.git >> "%LOG%" 2>&1
 git add -A >> "%LOG%" 2>&1
@@ -24,9 +26,9 @@ echo RESULTADO: ENVIADO PARA O GITHUB. >> "%LOG%"
 echo. >> "%LOG%"
 echo FALTA UM PASSO, no site do GitHub: >> "%LOG%"
 echo   1. Abra github.com/CAP1974/ctm-socios >> "%LOG%"
-echo   2. Settings  ->  Pages >> "%LOG%"
+echo   2. Settings, depois Pages >> "%LOG%"
 echo   3. Source: "Deploy from a branch" >> "%LOG%"
-echo   4. Branch: main  /  (root)  ->  Save >> "%LOG%"
+echo   4. Branch: main  /  (root)  e carregar Save >> "%LOG%"
 echo. >> "%LOG%"
 echo Passados 1 a 2 minutos o link dos membros fica activo: >> "%LOG%"
 echo   https://cap1974.github.io/ctm-socios/ >> "%LOG%"
