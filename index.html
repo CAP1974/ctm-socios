@@ -628,6 +628,17 @@ function migrate(){
   if(D.config.meta_pct!=null)D.config.meta_pct=clampMeta(D.config.meta_pct);
   ACCS.forEach(a=>{
     if(!D.config.accounts[a])D.config.accounts[a]={active:a==='a',cur:'EUR',broker:'',cap:0,fx:1};
+    const ac=D.config.accounts[a];
+    // Taxa de câmbio: corrigir sozinho o erro de escrever o capital no campo da taxa.
+    // Nenhuma moeda real vale mais de 5 euros.
+    const PADRAO={EUR:1,USD:0.865,GBP:1.17,CHF:1.07,BRL:0.16};
+    if(+ac.fx>5){
+      if(!(+ac.cap>0))ac.cap=+ac.fx;      // o valor era o capital: recuperá-lo
+      ac.fx=PADRAO[ac.cur]||1;            // taxa aproximada, a confirmar no Setup
+      ac.fx_auto=true;                    // marca que foi a app a pôr
+    }
+    if(ac.cur==='EUR')ac.fx=1;
+    if(!isFinite(+ac.fx)||+ac.fx<=0){ac.fx=PADRAO[ac.cur]||1;ac.fx_auto=true;}
   });
   if(!Array.isArray(D.config.checklist)||!D.config.checklist.length)
     D.config.checklist=CHK_DEF.map(x=>({k:x.k,l:x.l,on:true}));
@@ -662,7 +673,7 @@ const dC=id=>{if(CH[id]){CH[id].destroy();delete CH[id];}};
 const COPT={responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#7a9ab5',font:{family:"'JetBrains Mono'",size:9}}}},scales:{x:{ticks:{color:'#3d5a70',font:{family:"'JetBrains Mono'",size:8}},grid:{color:'#1a2d3d'}},y:{ticks:{color:'#3d5a70',font:{family:"'JetBrains Mono'",size:8}},grid:{color:'#1a2d3d'}}}};
 const cRat=pct=>{const p=+pct;if(p<0)return 0;if(p>=30)return 5;if(p>=20)return 4;if(p>=10)return 3;if(p>=5)return 2;return 1;};
 const stH=r=>r===0?'<span class="stars z">✕</span>':`<span class="stars">${'★'.repeat(r)}${'☆'.repeat(5-r)}</span>`;
-const APP_VER='2026.08.11';
+const APP_VER='2026.08.11.1';
 const SCHEMA=3;
 const CHK_DEF=[{k:'plan',l:'Plano de trading revisto'},{k:'risk',l:'Regras de risco respeitadas'},{k:'screen',l:'Screenshots guardados'},{k:'review',l:'Review posições em aberto'},{k:'emotion',l:'Estado emocional verificado'},{k:'news',l:'Calendário económico consultado'},{k:'journal',l:'Diário actualizado'},{k:'stop',l:'Stop-loss verificado'}];
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -1486,6 +1497,15 @@ function irParaDia(k){
 function checkFxBanner(){
   const el=$('fx-banner');if(!el)return;
   const maus=aaccs().filter(a=>{const ac=D.config.accounts[a];return !(+ac.fx>0)||+ac.fx>5;});
+  const auto=aaccs().filter(a=>D.config.accounts[a].fx_auto&&D.config.accounts[a].cur!=='EUR');
+  if(!maus.length&&auto.length){
+    el.innerHTML='<div style="display:flex;align-items:center;gap:12px;background:rgba(255,209,102,.07);border:1px solid rgba(255,209,102,.3);border-radius:var(--r);padding:10px 14px;margin-bottom:12px">'
+      +'<span style="font-family:var(--mono);font-size:10px;color:var(--yellow);flex:1">&#9888; A taxa de c&acirc;mbio de '
+      +auto.map(a=>esc(D.config.accounts[a].cur)+' ('+D.config.accounts[a].fx+')').join(', ')
+      +' foi preenchida automaticamente porque estava inv&aacute;lida. Confirme no Setup se corresponde &agrave; cota&ccedil;&atilde;o de hoje.</span>'
+      +'<button class="tbb" onclick="showTab(11)">Ver Setup</button></div>';
+    return;
+  }
   if(!maus.length){el.innerHTML='';return;}
   const det=maus.map(a=>{const ac=D.config.accounts[a];return ac.cur+': '+(+ac.fx>0?ac.fx:'em falta');}).join(' · ');
   const trocado=maus.some(a=>{const ac=D.config.accounts[a];return +ac.fx>5;});
@@ -1727,6 +1747,7 @@ function saveConfig(){
     if(togS[a]&&(fx<=0||fx>5))mau.push(cur);
     D.config.accounts[a]={active:togS[a],cur:cur,broker:getV('cfg-broker-'+a),cap:cap,fx:fx};
   });
+  ACCS.forEach(a=>{delete D.config.accounts[a].fx_auto;});
   if(trocas.length)showToast('↔️ Campos trocados corrigidos — '+trocas.join(' · '));
   if(mau.length)alert('Falta a Taxa p/EUR da conta '+mau.join(', ')+'.\n\nÉ quanto vale UMA unidade dessa moeda em euros — hoje 1 USD ≈ 0,865 EUR.\n\nO AUM fica errado até preencher. Volte ao Setup e escreva a taxa.');
   save();buildDailyForms();renderAll();refreshDaySel();renderCompForm();checkFxBanner();
