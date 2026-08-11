@@ -1,1 +1,1 @@
-Taxa de cambio corrige-se sozinha ao abrir - AUM deixa de precisar de intervencao
+Lucro e Valor recalculados nos dias ja gravados; novo dia herda posicoes e preco de abertura da sessao anterior

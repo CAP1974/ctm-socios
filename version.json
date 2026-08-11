@@ -1,5 +1,5 @@
 {
     "version":  "2026.08.11.1",
-    "notas":  "Taxa de cambio corrige-se sozinha ao abrir - AUM deixa de precisar de intervencao",
-    "publicado":  "2026-08-11 20:58"
+    "notas":  "Lucro e Valor recalculados nos dias ja gravados; novo dia herda posicoes e preco de abertura da sessao anterior",
+    "publicado":  "2026-08-11 21:18"
 }

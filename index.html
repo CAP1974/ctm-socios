@@ -315,7 +315,7 @@ td.g{color:var(--green);font-weight:600;}td.r{color:var(--red);font-weight:600;}
   </div>
   <div class="lsec"><div class="lshead"><div class="lstitle">&#128197; Cabeçalho da sessão</div></div>
     <div class="lsbody"><div class="g2" style="gap:12px">
-      <div class="fg"><label class="fl">Data</label><input class="fi" type="date" id="day-date"></div>
+      <div class="fg"><label class="fl">Data</label><input class="fi" type="date" id="day-date" onchange="mudarData()"></div>
       <div class="fg"><label class="fl">Nota do dia</label><textarea class="fta" id="day-nota" placeholder="Observações..." style="min-height:50px"></textarea></div>
     </div></div></div>
   <div id="pos-sections"></div>
@@ -655,6 +655,10 @@ function migrate(){
   const first=aaccs()[0]||'a';
   dkeys().forEach(k=>{
     const d=D.dias[k];
+    // Lucro, Lucro% e Valor derivam sempre de volume x precos — reparar registos antigos
+    ACCS.forEach(a=>{(d['pos_'+a]||[]).forEach(p=>{
+      const v=calcPosVals(p);p.valor=v.valor;p.lucro=v.lucro;p.lucro_pct=v.lucro_pct;
+    });});
     (d.trades||[]).forEach(t=>{if(!t.acc||ACCS.indexOf(t.acc)<0)t.acc=first;});
     (d.eventos||[]).forEach(e=>{if(!e.acc||ACCS.indexOf(e.acc)<0)e.acc=first;});
   });
@@ -1566,7 +1570,7 @@ function buildDailyForms(){
   let pSec='';
   accs.forEach(a=>{
     const ac=D.config.accounts[a];
-    pSec+=`<div class="lsec"><div class="lshead"><div class="lstitle">📈 Posições — Conta ${ac.cur} · ${ac.broker||'Conta '+a.toUpperCase()}</div><button class="btn btn-s btn-sm" onclick="addPos('${a}')">+ Adicionar</button></div><div class="lsbody"><div class="twrap"><table class="ptbl"><thead><tr><th>Activo</th><th>Mkt</th><th title="Calculado automaticamente">Lucro% ƒ</th><th title="Calculado automaticamente">Lucro ƒ</th><th>Volume</th><th title="Calculado automaticamente">Valor ƒ</th><th>Actual</th><th>Abertura</th><th>ΔD-1</th><th></th></tr></thead><tbody id="pos-body-${a}"></tbody><tfoot><tr><td colspan="2" style="font-size:8px;color:var(--text3);letter-spacing:1px">LUCRO TOTAL</td><td colspan="2"><span id="pos-tot-${a}" style="color:var(--green);font-weight:600;font-family:var(--mono);font-size:11px">0.00</span></td><td colspan="7"></td></tr></tfoot></table></div></div></div>`;
+    pSec+=`<div class="lsec"><div class="lshead"><div class="lstitle">📈 Posições — Conta ${ac.cur} · ${ac.broker||'Conta '+a.toUpperCase()}</div><button class="btn btn-s btn-sm" onclick="addPos('${a}')">+ Adicionar</button> <button class="btn btn-s btn-sm" onclick="herdarPosicoes(getV('day-date')||today())" title="Copiar activos, volumes e precos de abertura da ultima sessao">&#8617; Sess&atilde;o anterior</button></div><div class="lsbody"><div class="twrap"><table class="ptbl"><thead><tr><th>Activo</th><th>Mkt</th><th title="Calculado automaticamente">Lucro% ƒ</th><th title="Calculado automaticamente">Lucro ƒ</th><th>Volume</th><th title="Calculado automaticamente">Valor ƒ</th><th>Actual</th><th>Abertura</th><th>ΔD-1</th><th></th></tr></thead><tbody id="pos-body-${a}"></tbody><tfoot><tr><td colspan="2" style="font-size:8px;color:var(--text3);letter-spacing:1px">LUCRO TOTAL</td><td colspan="2"><span id="pos-tot-${a}" style="color:var(--green);font-weight:600;font-family:var(--mono);font-size:11px">0.00</span></td><td colspan="7"></td></tr></tfoot></table></div></div></div>`;
   });
   setH('pos-sections',pSec);
   let sf=`<div style="display:grid;grid-template-columns:repeat(${Math.min(4,accs.length*2)},1fr);gap:10px;margin-bottom:10px">`;
@@ -1581,11 +1585,55 @@ function buildDailyForms(){
   accs.forEach(a=>{if(!posF[a])posF[a]=[];renderPosForm(a);});
   renderTradesForm();renderEventsForm();
 }
+// Última sessão com posições nesta conta, antes de uma data
+function posSessaoAnterior(a,dataAlvo){
+  // a sessão mais recente com posições, estritamente ANTES do dia a preencher
+  const ds=dkeys().filter(k=>k<dataAlvo);
+  for(let i=ds.length-1;i>=0;i--){
+    const arr=D.dias[ds[i]]['pos_'+a];
+    if(arr&&arr.length)return {dia:ds[i],pos:arr};
+  }
+  return null;
+}
+// Copia activo, mercado, volume e preço de abertura; só falta o preço actual.
+function herdarPosicoes(dataAlvo,silencioso){
+  let n=0,de=null;
+  vaccs().forEach(a=>{
+    if((posF[a]||[]).length)return;                 // não mexer se já há linhas
+    const ant=posSessaoAnterior(a,dataAlvo);
+    if(!ant)return;
+    de=ant.dia;
+    posF[a]=ant.pos.map(p=>({activo:p.activo,mkt:p.mkt,volume:p.volume,
+      preco_ab:p.preco_ab,preco_atual:'',valor:'',lucro:'',lucro_pct:'',delta_d1:''}));
+    n+=posF[a].length;
+  });
+  if(n){
+    vaccs().forEach(a=>renderPosForm(a));
+    if(!silencioso)showToast('📋 '+n+' posição'+(n>1?'ões':'')+' de '+fmtD(de)+' — falta o preço actual');
+  }
+  return n;
+}
+// Escolher uma data: se já existe sessão carrega-a; se é nova, herda da anterior.
+function mudarData(){
+  const d=getV('day-date');if(!d)return;
+  if(d===loadedDay)return;
+  if(dirty&&!confirm('Tem dados por guardar nesta sessão.\n\nMudar de data agora descarta-os. Continuar?')){
+    setV('day-date',loadedDay||today());return;
+  }
+  if(D.dias[d]){loadDay(d);renderCompForm();return;}
+  loadedDay=null;dirty=false;
+  posF={a:[],b:[],c:[]};tradesF=[];eventsF=[];
+  setV('day-nota','');setV('day-diario','');
+  vaccs().forEach(a=>{setV('day-cap-'+a,'');setV('day-caixa-'+a,'');setV('day-realiz-'+a,'');});
+  herdarPosicoes(d);
+  vaccs().forEach(a=>renderPosForm(a));renderTradesForm();renderEventsForm();renderCompForm();liveCalc();
+}
 function clearDayForm(){
   loadedDay=null;dirty=false;
   setV('day-date',today());setV('day-nota','');setV('day-diario','');
   posF={a:[],b:[],c:[]};tradesF=[];eventsF=[];
   vaccs().forEach(a=>{setV('day-cap-'+a,'');setV('day-caixa-'+a,'');setV('day-realiz-'+a,'');});
+  herdarPosicoes(getV('day-date')||today(),true);
   vaccs().forEach(a=>renderPosForm(a));renderTradesForm();renderEventsForm();liveCalc();
   setV('load-day-sel','');
 }
@@ -1608,13 +1656,18 @@ function remPos(a,i){posF[a].splice(i,1);renderPosForm(a);}
 // Valor  = volume x preco actual
 // Lucro  = volume x (actual - abertura)
 // Lucro% = (actual / abertura - 1) x 100
-function recalcPos(a,i){
-  const p=(posF[a]||[])[i];if(!p)return;
+function calcPosVals(p){
   const vol=parseFloat(p.volume),at=parseFloat(p.preco_atual),ab=parseFloat(p.preco_ab);
   const okV=isFinite(vol)&&vol!==0, okA=isFinite(at)&&at!==0, okB=isFinite(ab)&&ab!==0;
-  p.valor      = (okV&&okA)        ? Math.round(vol*at*100)/100        : '';
-  p.lucro      = (okV&&okA&&okB)   ? Math.round(vol*(at-ab)*100)/100   : '';
-  p.lucro_pct  = (okA&&okB)        ? Math.round((at/ab-1)*10000)/100   : '';
+  return {
+    valor:     (okV&&okA)      ? Math.round(vol*at*100)/100      : '',
+    lucro:     (okV&&okA&&okB) ? Math.round(vol*(at-ab)*100)/100 : '',
+    lucro_pct: (okA&&okB)      ? Math.round((at/ab-1)*10000)/100 : ''
+  };
+}
+function recalcPos(a,i){
+  const p=(posF[a]||[])[i];if(!p)return;
+  const v=calcPosVals(p);p.valor=v.valor;p.lucro=v.lucro;p.lucro_pct=v.lucro_pct;
 }
 function recalcTodas(a){(posF[a]||[]).forEach((_,i)=>recalcPos(a,i));}
 function pintaCalc(a,i){
